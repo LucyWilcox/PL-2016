@@ -35,16 +35,15 @@ class VVector (Value):
         self.type = "vector"
         self.vector = v
     def get(self, n):
-        self.n = self.vector[n]
+        return self.vector[n]
 
 class VRational (Value):
     def __init__ (self, n, d):
+        self.type = "rational"
         self.numer = n
         self.denom = d
 
-
-v = VVector([4, 5, 6])
-v.get(0)
+# print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
 
 #
 # Expressions
@@ -83,7 +82,7 @@ class ERational (Exp):
     # Rational literal
 
     def __init__ (self, r1, r2):
-        self.enum = r1
+        self.numer = r1
         self.denom = r2
 
     def __str__ (self):
@@ -179,8 +178,8 @@ class EIsZero (Exp):
             raise Exception ("Runtime error: not an integer")
         return EIf(EBoolean(v.value==0),EBoolean(True),EBoolean(False)).eval()
 # EIsZero(EBoolean(True)).eval().value
-# e = EIsZero(EInteger(12)).eval().value
-# print e
+# print EIsZero(EPlus(EInteger(1),EInteger(1))).eval().value
+
 
 
 class EAnd(Exp):
@@ -244,16 +243,19 @@ class EDiv(Exp):
     def eval(self):
         v1 = self.e1
         v2 = self.e2
+        print v2.eval().value
         if v1.eval().type == "integer":
             v1 = VRational(v1, EInteger(1))
         if v2.eval().type == "integer":
             v2 = VRational(v2, EInteger(1))
         numer = ETimes(v1.numer, v2.denom).eval().value
         denom = ETimes(v2.numer, v1.denom).eval().value     
-        return ERational(EInteger(numer), EInteger(denom))
+        return ERational(EInteger(numer).eval().value, EInteger(denom).eval().value)
 
-
+def rat (v):
+    return "{}/{}".format(v.numer, v.denom)
 # r1 = ERational(EInteger(9), EInteger(4))
 # r2 = ERational(EInteger(8), EInteger(1))
 # print EDiv(r1, r2).eval().denom
-print EDiv(EInteger(9),EInteger(8)).eval().eval().denom.eval().value
+# print EDiv(EInteger(9),EInteger(8)).eval().eval().denom.eval().value
+print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
