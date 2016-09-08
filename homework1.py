@@ -139,3 +139,68 @@ class VBoolean (Value):
     def __init__ (self,b):
         self.value = b
         self.type = "boolean"
+
+
+
+class EIsZero (Exp):
+    def __init__ (self,e):
+        self._exp=e
+    def eval(self):
+        v=self._exp.eval()
+        if v.type != "integer":
+            raise Exception ("Runtime error: not an integer")
+        return EIf(EBoolean(v.value==0),EBoolean(True),EBoolean(False)).eval()
+# EIsZero(EBoolean(True)).eval().value
+# e = EIsZero(EInteger(12)).eval().value
+# print e
+
+
+class EAnd(Exp):
+    def __init__ (self,e1,e2):
+        self._exp1=e1
+        self._exp2=e2
+    def eval(self):
+        v1=self._exp1.eval()
+        v2=self._exp2.eval()
+        if v1.type == "boolean" and v2.type == "boolean":
+            return EIf(EBoolean(v1.value==False),EBoolean(False),EIf(EBoolean(v2.value==False),EBoolean(False),EBoolean(True))).eval()
+        raise Exception ("Runtime error: conditions are not booleans")
+# EAnd(EInteger(12),EBoolean(False)).eval().value     
+# print EAnd(EBoolean(True),EBoolean(False)).eval().value
+# print EAnd(EBoolean(True),EBoolean(True)).eval().value
+# print EAnd(EBoolean(False),EBoolean(False)).eval().value
+# print EAnd(EBoolean(False),EBoolean(True)).eval().value
+
+class EOr(Exp):
+    def __init__ (self,e1,e2):
+        self._exp1=e1
+        self._exp2=e2
+    def eval(self):
+        v1=self._exp1.eval()
+        v2=self._exp2.eval()
+        if v1.type == "boolean" and v2.type == "boolean":
+            return EIf(EBoolean(v1.value==True),EBoolean(True),EIf(EBoolean(v2.value==True),EBoolean(True),EBoolean(False))).eval()
+        raise Exception ("Runtime error: conditions are not booleans")
+
+# EOr(EInteger(12),EBoolean(False)).eval().value     
+# print EOr(EBoolean(True),EBoolean(False)).eval().value
+# print EOr(EBoolean(True),EBoolean(True)).eval().value
+# print EOr(EBoolean(False),EBoolean(False)).eval().value
+# print EOr(EBoolean(False),EBoolean(True)).eval().value
+
+class ENot(Exp):
+    def __init__ (self,e):
+        self._exp=e
+    def eval(self):
+        v=self._exp.eval()
+        if v.type == "boolean":
+            return EBoolean(not v.value).eval()
+        raise Exception ("Runtime error: condition is not boolean")
+# ENot(EInteger(12)).eval().value     
+# print ENot(EBoolean(False)).eval().value
+# print ENot(EBoolean(True)).eval().value
+
+
+
+
+
