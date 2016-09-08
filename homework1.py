@@ -9,7 +9,42 @@
 #
 
 
+#
+# Values
+#
 
+class Value (object):
+    pass
+
+
+class VInteger (Value):
+    # Value representation of integers
+    def __init__ (self,i):
+        self.value = i
+        self.type = "integer"
+
+class VBoolean (Value):
+    # Value representation of Booleans
+    def __init__ (self,b):
+        self.value = b
+        self.type = "boolean"
+
+class VVector (Value):
+    def __init__ (self, v):
+        self.length = len(v)
+        self.type = "vector"
+        self.vector = v
+    def get(self, n):
+        self.n = self.vector[n]
+
+class VRational (Value):
+    def __init__ (self, n, d):
+        self.numer = n
+        self.denom = d
+
+
+v = VVector([4, 5, 6])
+v.get(0)
 
 #
 # Expressions
@@ -43,6 +78,20 @@ class EBoolean (Exp):
 
     def eval (self):
         return VBoolean(self._boolean)
+
+class ERational (Exp):
+    # Rational literal
+
+    def __init__ (self, r1, r2):
+        self.enum = r1
+        self.denom = r2
+
+    def __str__ (self):
+        return "ERational({},{})".format(self.enum, self.denom)
+
+    def eval (self):
+        return VRational(self.enum, self.denom)
+
 
 
 class EPlus (Exp):
@@ -120,27 +169,6 @@ class EIf (Exp):
             return self._else.eval()
 
 
-#
-# Values
-#
-
-class Value (object):
-    pass
-
-
-class VInteger (Value):
-    # Value representation of integers
-    def __init__ (self,i):
-        self.value = i
-        self.type = "integer"
-
-class VBoolean (Value):
-    # Value representation of Booleans
-    def __init__ (self,b):
-        self.value = b
-        self.type = "boolean"
-
-
 
 class EIsZero (Exp):
     def __init__ (self,e):
@@ -200,7 +228,32 @@ class ENot(Exp):
 # print ENot(EBoolean(False)).eval().value
 # print ENot(EBoolean(True)).eval().value
 
+class EVector(Exp):
+    def __init__ (self, e):
+        pass
 
 
+class EDiv(Exp):
+    def __init__ (self, e1, e2):
+        self.e1 = e1
+        self.e2 = e2
+
+    def __str__(self):
+        return "EDiv({},{})".format(self.e1, self.e2)
+
+    def eval(self):
+        v1 = self.e1
+        v2 = self.e2
+        if v1.eval().type == "integer":
+            v1 = VRational(v1, EInteger(1))
+        if v2.eval().type == "integer":
+            v2 = VRational(v2, EInteger(1))
+        numer = ETimes(v1.numer, v2.denom).eval().value
+        denom = ETimes(v2.numer, v1.denom).eval().value     
+        return ERational(EInteger(numer), EInteger(denom))
 
 
+# r1 = ERational(EInteger(9), EInteger(4))
+# r2 = ERational(EInteger(8), EInteger(1))
+# print EDiv(r1, r2).eval().denom
+print EDiv(EInteger(9),EInteger(8)).eval().eval().denom.eval().value
