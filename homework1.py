@@ -94,10 +94,10 @@ class ERational (Exp):
         self.denom = r2
 
     def __str__ (self):
-        return "ERational({},{})".format(self.enum, self.denom)
+        return "ERational({},{})".format(self.numer, self.denom)
 
     def eval (self):
-        return VRational(self.enum, self.denom)
+        return VRational(self.numer, self.denom)
 
 
 
@@ -137,10 +137,10 @@ class EMinus (Exp):
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
         if v1.type == "vector":
-            sum_vector = []
+            minus_vector = []
             for i in range(len(v1.vector)):
-                sum_vector.append(EMinus(v1.vector[i], v2.vector[i]))
-            return VVector(sum_vector)
+                minus_vector.append(EMinus(v1.vector[i], v2.vector[i]))
+            return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
         raise Exception ("Runtime error: trying to subtract non-numbers")
@@ -160,7 +160,6 @@ class ETimes (Exp):
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
         if v1.type == "vector":
-            sum_vector = []
             dot_product = EInteger(0)
             for i in range(len(v1.vector)):
                 v_times = ETimes(v1.vector[i], v2.vector[i]).eval().value
@@ -288,22 +287,27 @@ class EDiv(Exp):
         return "EDiv({},{})".format(self.e1, self.e2)
 
     def eval(self):
-        v1 = self.e1
-        v2 = self.e2
-        print v2.eval().value
-        if v1.eval().type == "integer":
-            v1 = VRational(v1, EInteger(1))
-        if v2.eval().type == "integer":
-            v2 = VRational(v2, EInteger(1))
-        numer = ETimes(v1.numer, v2.denom).eval().value
-        denom = ETimes(v2.numer, v1.denom).eval().value     
-        return ERational(EInteger(numer).eval().value, EInteger(denom).eval().value)
+        v1 = self.e1.eval()
+        v2 = self.e2.eval()
+        if v1.type == "integer":
+            v1 = VRational(v1.value, VInteger(1).value)
+        if v2.type == "integer":
+            v2 = VRational(v2.value, VInteger(1).value)
+        v1_type = getattr(v1, "type", False)
+        v2_type = getattr(v2, "type", False)
+        numer = ETimes(EInteger(v1.numer), EInteger(v2.denom)).eval().value
+        denom = ETimes(EInteger(v2.numer), EInteger(v1.denom)).eval().value   
+        return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
 
-# r1 = ERational(EInteger(9), EInteger(4))
-# r2 = ERational(EInteger(8), EInteger(1))
-# print EDiv(r1, r2).eval().denom
-# print EDiv(EInteger(9),EInteger(8)).eval().eval().denom.eval().value
-# print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
+
+print rat(EDiv(EInteger(1),EInteger(2)).eval())
+#'1/2'
+print rat(EDiv(EInteger(2),EInteger(3)).eval())
+# # '2/3'
+print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
+# # '1/6'
+print  rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval())
+# # '8/3'
 
 #print EPlus(EInteger(9), EInteger(8)).eval().value
 # print pair(EPlus(EVector([EInteger(2),EInteger(3)]), EVector([EInteger(33),EInteger(66)])).eval())
@@ -319,9 +323,9 @@ class EDiv(Exp):
 v1 = EVector([EInteger(2),EInteger(3)])
 v2 = EVector([EInteger(33),EInteger(66)])
 
-print ETimes(v1,v2).eval().value
-# 264
-print ETimes(v1,EPlus(v2,v2)).eval().value
-# 528
-print ETimes(v1,EMinus(v2,v2)).eval().value
-# 0
+# print ETimes(v1,v2).eval().value
+# # 264
+# print ETimes(v1,EPlus(v2,v2)).eval().value
+# # 528
+# print ETimes(v1,EMinus(v2,v2)).eval().value
+# # 0
