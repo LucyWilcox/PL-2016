@@ -8,6 +8,14 @@
 # Remarks:
 #
 
+#
+# Helper Functions 
+#
+
+def pair (v): return (v.get(0).value,v.get(1).value)
+
+def rat (v):
+    return "{}/{}".format(v.numer, v.denom)
 
 #
 # Values
@@ -35,7 +43,7 @@ class VVector (Value):
         self.type = "vector"
         self.vector = v
     def get(self, n):
-        return self.vector[n]
+        return self.vector[n].eval()
 
 class VRational (Value):
     def __init__ (self, n, d):
@@ -106,10 +114,14 @@ class EPlus (Exp):
     def eval (self):
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
-        if v1.type == "integer" and v2.type == "integer":
+        if v1.type == "vector":
+            sum_vector = []
+            for i in range(len(v1.vector)):
+                sum_vector.append(EPlus(v1.vector[i], v2.vector[i]))
+            return VVector(sum_vector)
+        elif v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value + v2.value)
         raise Exception ("Runtime error: trying to add non-numbers")
-
 
 class EMinus (Exp):
     # Subtraction operation
@@ -124,6 +136,11 @@ class EMinus (Exp):
     def eval (self):
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
+        if v1.type == "vector":
+            sum_vector = []
+            for i in range(len(v1.vector)):
+                sum_vector.append(EMinus(v1.vector[i], v2.vector[i]))
+            return VVector(sum_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
         raise Exception ("Runtime error: trying to subtract non-numbers")
@@ -142,6 +159,15 @@ class ETimes (Exp):
     def eval (self):
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
+        if v1.type == "vector":
+            sum_vector = []
+            dot_product = EInteger(0)
+            for i in range(len(v1.vector)):
+                v_times = ETimes(v1.vector[i], v2.vector[i]).eval().value
+                e_times = EInteger(v_times)
+                v_plus = EPlus(dot_product, e_times).eval().value
+                dot_product = EInteger(v_plus)
+            return dot_product.eval()
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value * v2.value)
         raise Exception ("Runtime error: trying to multiply non-numbers")
@@ -180,8 +206,6 @@ class EIsZero (Exp):
 # EIsZero(EBoolean(True)).eval().value
 # print EIsZero(EPlus(EInteger(1),EInteger(1))).eval().value
 
-
-
 class EAnd(Exp):
     def __init__ (self,e1,e2):
         self._exp1=e1
@@ -189,6 +213,11 @@ class EAnd(Exp):
     def eval(self):
         v1=self._exp1.eval()
         v2=self._exp2.eval()
+        if v1.type == "vector":
+            sum_vector = []
+            for i in range(len(v1.vector)):
+                sum_vector.append(EAnd(v1.vector[i], v2.vector[i]))
+            return VVector(sum_vector)
         if v1.type == "boolean" and v2.type == "boolean":
             return EIf(EBoolean(v1.value==False),EBoolean(False),EIf(EBoolean(v2.value==False),EBoolean(False),EBoolean(True))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
@@ -205,6 +234,11 @@ class EOr(Exp):
     def eval(self):
         v1=self._exp1.eval()
         v2=self._exp2.eval()
+        if v1.type == "vector":
+            sum_vector = []
+            for i in range(len(v1.vector)):
+                sum_vector.append(EOr(v1.vector[i], v2.vector[i]))
+            return VVector(sum_vector)
         if v1.type == "boolean" and v2.type == "boolean":
             return EIf(EBoolean(v1.value==True),EBoolean(True),EIf(EBoolean(v2.value==True),EBoolean(True),EBoolean(False))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
@@ -220,6 +254,11 @@ class ENot(Exp):
         self._exp=e
     def eval(self):
         v=self._exp.eval()
+        if v.type == "vector":
+            sum_vector = []
+            for i in range(len(v.vector)):
+                sum_vector.append(ENot(v.vector[i]))
+            return VVector(sum_vector)
         if v.type == "boolean":
             return EBoolean(not v.value).eval()
         raise Exception ("Runtime error: condition is not boolean")
@@ -229,8 +268,16 @@ class ENot(Exp):
 
 class EVector(Exp):
     def __init__ (self, e):
-        pass
+        self.vector = e
 
+    def eval(self):
+        return VVector(self.vector)
+
+# print EVector([]).eval().length
+# print EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().length
+# print EVector([EPlus(EInteger(1),EInteger(2)),EInteger(0)]).eval().get(1).value
+# print EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(0).value
+# print EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(1).value
 
 class EDiv(Exp):
     def __init__ (self, e1, e2):
@@ -252,10 +299,29 @@ class EDiv(Exp):
         denom = ETimes(v2.numer, v1.denom).eval().value     
         return ERational(EInteger(numer).eval().value, EInteger(denom).eval().value)
 
-def rat (v):
-    return "{}/{}".format(v.numer, v.denom)
 # r1 = ERational(EInteger(9), EInteger(4))
 # r2 = ERational(EInteger(8), EInteger(1))
 # print EDiv(r1, r2).eval().denom
 # print EDiv(EInteger(9),EInteger(8)).eval().eval().denom.eval().value
-print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
+# print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
+
+#print EPlus(EInteger(9), EInteger(8)).eval().value
+# print pair(EPlus(EVector([EInteger(2),EInteger(3)]), EVector([EInteger(33),EInteger(66)])).eval())
+# print pair(EMinus(EVector([EInteger(2),EInteger(3)]), EVector([EInteger(33),EInteger(66)])).eval())
+
+# b1 = EVector([EBoolean(True),EBoolean(False)])
+# b2 = EVector([EBoolean(False),EBoolean(False)])
+
+# print pair(EAnd(b1,b2).eval())
+# print pair(EOr(b1,b2).eval())
+# print pair(ENot(b1).eval())
+
+v1 = EVector([EInteger(2),EInteger(3)])
+v2 = EVector([EInteger(33),EInteger(66)])
+
+print ETimes(v1,v2).eval().value
+# 264
+print ETimes(v1,EPlus(v2,v2)).eval().value
+# 528
+print ETimes(v1,EMinus(v2,v2)).eval().value
+# 0
