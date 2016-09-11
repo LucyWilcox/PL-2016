@@ -150,15 +150,15 @@ class EMinus (Exp):
         return "EMinus({},{})".format(self._exp1,self._exp2)
 
     def eval (self):
+        print "@@@@", self._exp1.eval()
         v1 = self._exp1.eval()
-        print v1.value
         v2 = self._exp2.eval()
-        print v2.value
         if v1.type == "vector":
             minus_vector = []
             for i in range(len(v1.vector)):
                 print "***", v1.vector[i].value
-                minus_vector.append(EMinus(EInterger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
+                print "*******",v1.vector[i]
+                minus_vector.append(EMinus(EInteger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
             return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
@@ -240,8 +240,7 @@ class EIsZero (Exp):
         if v.type != "integer":
             raise Exception ("Runtime error: not an integer")
         return EIf(EBoolean(v.value==0),EBoolean(True),EBoolean(False)).eval()
-# EIsZero(EBoolean(True)).eval().value
-# print EIsZero(EPlus(EInteger(1),EInteger(1))).eval().value
+
 
 class EAnd(Exp):
     def __init__ (self,e1,e2):
@@ -258,11 +257,7 @@ class EAnd(Exp):
         if v1.type == "boolean" and v2.type == "boolean":
             return EIf(EBoolean(v1.value==False),EBoolean(False),EIf(EBoolean(v2.value==False),EBoolean(False),EBoolean(True))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
-# EAnd(EInteger(12),EBoolean(False)).eval().value     
-# print EAnd(EBoolean(True),EBoolean(False)).eval().value
-# print EAnd(EBoolean(True),EBoolean(True)).eval().value
-# print EAnd(EBoolean(False),EBoolean(False)).eval().value
-# print EAnd(EBoolean(False),EBoolean(True)).eval().value
+
 
 class EOr(Exp):
     def __init__ (self,e1,e2):
@@ -280,11 +275,6 @@ class EOr(Exp):
             return EIf(EBoolean(v1.value==True),EBoolean(True),EIf(EBoolean(v2.value==True),EBoolean(True),EBoolean(False))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
 
-# EOr(EInteger(12),EBoolean(False)).eval().value     
-# print EOr(EBoolean(True),EBoolean(False)).eval().value
-# print EOr(EBoolean(True),EBoolean(True)).eval().value
-# print EOr(EBoolean(False),EBoolean(False)).eval().value
-# print EOr(EBoolean(False),EBoolean(True)).eval().value
 
 class ENot(Exp):
     def __init__ (self,e):
@@ -298,10 +288,8 @@ class ENot(Exp):
             return VVector(sum_vector)
         if v.type == "boolean":
             return EBoolean(not v.value).eval()
-        raise Exception ("Runtime error: condition is not boolean")
-# ENot(EInteger(12)).eval().value     
-# print ENot(EBoolean(False)).eval().value
-# print ENot(EBoolean(True)).eval().value
+        raise Exception ("Runtime error: condition is not boolean")     
+
 
 class EVector(Exp):
     def __init__ (self, e):
@@ -312,11 +300,6 @@ class EVector(Exp):
             self.vector[i] = v.eval()
         return VVector(self.vector)
 
-# print EVector([]).eval().length
-# print EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().length
-# print EVector([EPlus(EInteger(1),EInteger(2)),EInteger(0)]).eval().get(1).value
-# print EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(0).value
-# print EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(1).value
 
 class EDiv(Exp):
     def __init__ (self, e1, e2):
