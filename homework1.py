@@ -151,14 +151,12 @@ class EMinus (Exp):
 
     def eval (self):
         v1 = self._exp1.eval()
-        print v1.value
         v2 = self._exp2.eval()
-        print v2.value
         if v1.type == "vector":
             minus_vector = []
             for i in range(len(v1.vector)):
                 print "***", v1.vector[i].value
-                minus_vector.append(EMinus(EInterger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
+                minus_vector.append(EMinus(EInteger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
             return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
@@ -375,12 +373,12 @@ class EDiv(Exp):
 #
 v1 = EVector([EInteger(2),EInteger(3)])
 v2 = EVector([EInteger(33),EInteger(66)])
-b1 = EVector([EBoolean(True),EBoolean(False)])
-b2 = EVector([EBoolean(False),EBoolean(False)])
+b1 = EVector([EInteger(2),EInteger(3)])
+b2 = EVector([EInteger(33),EInteger(66)])
 
-print  pair(EPlus(v1,v2).eval()) #== (35, 69)
-print pair(EMinus(v1,v2).eval())# == (-31, -63)
-print EMinus(EInteger(4), EInteger(1)).eval().value
+print pair(EPlus(v1,v2).eval()) #== (35, 69)
+print pair(EMinus(b1,b2).eval())# == (-31, -63)
+# print EMinus(EInteger(4), EInteger(1)).eval().value
 # assert pair(EAnd(b1,b2).eval()) == (False, False)
 # assert pair(EOr(b1,b2).eval()) == (True, False)
 # assert pair(ENot(b1).eval()) == (False, True)
