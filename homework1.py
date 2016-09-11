@@ -189,7 +189,7 @@ class ETimes (Exp):
         if v1.type == "vector":
             dot_product = EInteger(0)
             for i in range(len(v1.vector)):
-                v_times = ETimes(v1.vector[i], v2.vector[i]).eval().value
+                v_times = ETimes(EInteger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval().value
                 e_times = EInteger(v_times)
                 v_plus = EPlus(dot_product, e_times).eval().value
                 dot_product = EInteger(v_plus)
@@ -254,6 +254,7 @@ class EAnd(Exp):
             return EIf(EBoolean(v1.value==False),EBoolean(False),EIf(EBoolean(v2.value==False),EBoolean(False),EBoolean(True))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
 
+
 class EOr(Exp):
     def __init__ (self,e1,e2):
         self._exp1=e1
@@ -316,62 +317,6 @@ class EDiv(Exp):
         return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
 
 
-# print rat(EDiv(EInteger(1),EInteger(2)).eval())
-# #'1/2'
-# print rat(EDiv(EInteger(2),EInteger(3)).eval())
-# # # '2/3'
-# print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
-# # # '1/6'
-# print  rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval())
-# # '8/3'
-
-#print EPlus(EInteger(9), EInteger(8)).eval().value
-# print pair(EPlus(EVector([EInteger(2),EInteger(3)]), EVector([EInteger(33),EInteger(66)])).eval())
-# print pair(EMinus(EVector([EInteger(2),EInteger(3)]), EVector([EInteger(33),EInteger(66)])).eval())
-
-# b1 = EVector([EBoolean(True),EBoolean(False)])
-# b2 = EVector([EBoolean(False),EBoolean(False)])
-
-# print pair(EAnd(b1,b2).eval())
-# print pair(EOr(b1,b2).eval())
-# print pair(ENot(b1).eval())
-
-# v1 = EVector([EInteger(2),EInteger(3)])
-# v2 = EVector([EInteger(33),EInteger(66)])
-
-# print ETimes(v1,v2).eval().value
-# # 264
-# print ETimes(v1,EPlus(v2,v2)).eval().value
-# # 528
-# print ETimes(v1,EMinus(v2,v2)).eval().value
-# # 0
-
-# print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
-
-#
-# Tests
-# #
-# v1 = EVector([EInteger(2),EInteger(3)])
-# v2 = EVector([EInteger(33),EInteger(66)])
-# b1 = EVector([EInteger(2),EInteger(3)])
-# b2 = EVector([EInteger(33),EInteger(66)])
-
-# print pair(EPlus(v1,v2).eval()) #== (35, 69)
-# print pair(EMinus(b1,b2).eval())# == (-31, -63)
-# print EMinus(EInteger(4), EInteger(1)).eval().value
-# assert pair(EAnd(b1,b2).eval()) == (False, False)
-# assert pair(EOr(b1,b2).eval()) == (True, False)
-# assert pair(ENot(b1).eval()) == (False, True)
-# b1 = EVector([EBoolean(True),EBoolean(False)])
-# b2 = EVector([EBoolean(False),EBoolean(False)])
-# print pair(EAnd(b1,b2).eval())
-# b1 = EVector([EBoolean(True),EBoolean(False)])
-# b2 = EVector([EBoolean(False),EBoolean(False)])
-# print pair(EOr(b1,b2).eval())
-# b1 = EVector([EBoolean(True),EBoolean(False)])
-# b2 = EVector([EBoolean(False),EBoolean(False)])
-# print pair(ENot(b1).eval())
-
 class PLTest(unittest.TestCase):
     def testSet(self):
         #helpful variables
@@ -379,10 +324,16 @@ class PLTest(unittest.TestCase):
         ff = EBoolean(False)
         v1 = EVector([EInteger(2),EInteger(3)])
         v2 = EVector([EInteger(33),EInteger(66)])
-        b1 = EVector([EBoolean(True),EBoolean(False)])
-        b2 = EVector([EBoolean(False),EBoolean(False)])
+        ba1 = EVector([EBoolean(True),EBoolean(False)])
+        ba2 = EVector([EBoolean(False),EBoolean(False)])
+        bo1 = EVector([EBoolean(True),EBoolean(False)])
+        bo2 = EVector([EBoolean(False),EBoolean(False)])
+        bn1 = EVector([EBoolean(True),EBoolean(False)])
+        bn2 = EVector([EBoolean(False),EBoolean(False)])
         m1 = EVector([EInteger(2),EInteger(3)])
         m2 = EVector([EInteger(33),EInteger(66)])
+        half = EDiv(EInteger(1),EInteger(2))
+        third = EDiv(EInteger(1),EInteger(3))
         #test cases
         #1a
         assert EIsZero(EInteger(0)).eval().value == True
@@ -427,25 +378,30 @@ class PLTest(unittest.TestCase):
         #2c
         assert pair(EPlus(v1,v2).eval()) == (35, 69)
         assert pair(EMinus(m1,m2).eval()) == (-31, -63)
-        assert pair(EAnd(b1,b2).eval()) == (False, False)
-        assert pair(EOr(b1,b2).eval()) == (True, False)
-        assert pair(ENot(b1).eval()) == (False, True)
+        assert pair(EAnd(ba1,ba2).eval()) == (False, False)
+        assert pair(EOr(bo1,bo2).eval()) == (True, False)
+        assert pair(ENot(bn1).eval()) == (False, True)
+        #2d
+        assert ETimes(EVector([EInteger(2),EInteger(3)]),EVector([EInteger(33),EInteger(66)])).eval().value == 264
+        assert ETimes(EVector([EInteger(2),EInteger(3)]),EPlus(EVector([EInteger(33),EInteger(66)]),EVector([EInteger(33),EInteger(66)]))).eval().value == 528
+        assert ETimes(EVector([EInteger(2),EInteger(3)]),EMinus(EVector([EInteger(33),EInteger(66)]),EVector([EInteger(33),EInteger(66)]))).eval().value == 0
+        #3a
+        assert VRational(1,3).numer == 1
+        assert VRational(1,3).denom == 3
+        assert VRational(2,3).numer == 2
+        assert VRational(2,3).denom == 3
+        #3b
+        assert rat(EDiv(EInteger(1),EInteger(2)).eval()) == '1/2'
+        assert rat(EDiv(EInteger(2),EInteger(3)).eval()) == '2/3'
+        assert rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval()) == '2/12'
+        assert rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval()) == '8/3'
+        #3c
+        assert rat(EPlus(half,third).eval()) == '5/6'
+        assert rat(EPlus(half,EInteger(1)).eval()) == '3/2'
+        assert rat(EMinus(half,third).eval()) == '1/6'
+        assert rat(EMinus(half,EInteger(1)).eval()) == '-1/2'
+        assert rat(ETimes(half,third).eval()) == '1/6'
+        assert rat(ETimes(half,EInteger(1)).eval()) == '1/2'
 
 if __name__ == '__main__':
     unittest.main()
-
-# half = EDiv(EInteger(1),EInteger(2))
-# third = EDiv(EInteger(1),EInteger(3))
-
-# print rat(EPlus(half,third).eval())
-# # '5/6'
-# print rat(EPlus(half,EInteger(1)).eval())
-# # '3/2'
-# print rat(EMinus(half,third).eval())
-# # '1/6'
-# print rat(EMinus(half,EInteger(1)).eval())
-# # '-1/2'
-# print rat(ETimes(half,third).eval())
-# # '1/6'
-# print rat(ETimes(half,EInteger(1)).eval())
-# '1/2'
