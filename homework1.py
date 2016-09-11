@@ -12,7 +12,9 @@
 # Helper Functions 
 #
 
-def pair (v): return (v.get(0).value,v.get(1).value)
+import unittest
+
+def pair (v): return (v.get(0).value, v.get(1).value)
 
 def rat (v):
     return "{}/{}".format(v.numer, v.denom)
@@ -31,11 +33,13 @@ class VInteger (Value):
         self.value = i
         self.type = "integer"
 
+
 class VBoolean (Value):
     # Value representation of Booleans
     def __init__ (self,b):
         self.value = b
         self.type = "boolean"
+
 
 class VVector (Value):
     def __init__ (self, v):
@@ -43,7 +47,8 @@ class VVector (Value):
         self.type = "vector"
         self.vector = v
     def get(self, n):
-        return self.vector[n].eval()
+        return self.vector[n]
+
 
 class VRational (Value):
     def __init__ (self, n, d):
@@ -51,7 +56,6 @@ class VRational (Value):
         self.numer = n
         self.denom = d
 
-# print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
 
 #
 # Expressions
@@ -86,6 +90,7 @@ class EBoolean (Exp):
     def eval (self):
         return VBoolean(self._boolean)
 
+
 class ERational (Exp):
     # Rational literal
 
@@ -98,7 +103,6 @@ class ERational (Exp):
 
     def eval (self):
         return VRational(self.numer, self.denom)
-
 
 
 class EPlus (Exp):
@@ -117,11 +121,12 @@ class EPlus (Exp):
         if v1.type == "vector":
             sum_vector = []
             for i in range(len(v1.vector)):
-                sum_vector.append(EPlus(v1.vector[i], v2.vector[i]))
+                sum_vector.append(EPlus(EInteger(v1.vector[i].value),EInteger(v2.vector[i].value)).eval())
             return VVector(sum_vector)
         elif v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value + v2.value)
         raise Exception ("Runtime error: trying to add non-numbers")
+
 
 class EMinus (Exp):
     # Subtraction operation
@@ -270,6 +275,8 @@ class EVector(Exp):
         self.vector = e
 
     def eval(self):
+        for i, v in enumerate(self.vector):
+            self.vector[i] = v.eval()
         return VVector(self.vector)
 
 # print EVector([]).eval().length
@@ -300,13 +307,13 @@ class EDiv(Exp):
         return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
 
 
-print rat(EDiv(EInteger(1),EInteger(2)).eval())
-#'1/2'
-print rat(EDiv(EInteger(2),EInteger(3)).eval())
-# # '2/3'
-print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
-# # '1/6'
-print  rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval())
+# print rat(EDiv(EInteger(1),EInteger(2)).eval())
+# #'1/2'
+# print rat(EDiv(EInteger(2),EInteger(3)).eval())
+# # # '2/3'
+# print rat(EDiv(EDiv(EInteger(2),EInteger(3)),EInteger(4)).eval())
+# # # '1/6'
+# print  rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval())
 # # '8/3'
 
 #print EPlus(EInteger(9), EInteger(8)).eval().value
@@ -320,8 +327,8 @@ print  rat(EDiv(EInteger(2),EDiv(EInteger(3),EInteger(4))).eval())
 # print pair(EOr(b1,b2).eval())
 # print pair(ENot(b1).eval())
 
-v1 = EVector([EInteger(2),EInteger(3)])
-v2 = EVector([EInteger(33),EInteger(66)])
+# v1 = EVector([EInteger(2),EInteger(3)])
+# v2 = EVector([EInteger(33),EInteger(66)])
 
 # print ETimes(v1,v2).eval().value
 # # 264
@@ -329,3 +336,70 @@ v2 = EVector([EInteger(33),EInteger(66)])
 # # 528
 # print ETimes(v1,EMinus(v2,v2)).eval().value
 # # 0
+
+# print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
+
+#
+# Tests
+#
+
+class PLTest(unittest.TestCase):
+    def testSet(self):
+        #helpful variables
+        tt = EBoolean(True)
+        ff = EBoolean(False)
+        v1 = EVector([EInteger(2),EInteger(3)])
+        v2 = EVector([EInteger(33),EInteger(66)])
+        b1 = EVector([EBoolean(True),EBoolean(False)])
+        b2 = EVector([EBoolean(False),EBoolean(False)])
+        #test cases
+        #1a
+        assert EIsZero(EInteger(0)).eval().value == True
+        assert EIsZero(EInteger(1)).eval().value == False
+        assert EIsZero(EInteger(9)).eval().value == False
+        assert EIsZero(EInteger(-1)).eval().value == False
+        assert EIsZero(EPlus(EInteger(1),EInteger(1))).eval().value == False
+        assert EIsZero(EMinus(EInteger(1),EInteger(1))).eval().value == True
+        #1b
+        assert EAnd(tt,tt).eval().value == True
+        assert EAnd(tt,ff).eval().value == False
+        assert EAnd(ff,tt).eval().value == False
+        assert EAnd(ff,ff).eval().value == False
+        assert EOr(tt,tt).eval().value == True
+        assert EOr(tt,ff).eval().value == True
+        assert EOr(ff,tt).eval().value == True
+        assert EOr(ff,ff).eval().value == False
+        assert ENot(tt).eval().value == False
+        assert ENot(ff).eval().value == True
+        assert EAnd(EOr(tt,ff),EOr(ff,tt)).eval().value == True
+        assert EAnd(EOr(tt,ff),EOr(ff,ff)).eval().value == False
+        assert EAnd(tt,ENot(tt)).eval().value == False
+        assert EAnd(tt,ENot(ENot(tt))).eval().value == True
+        #2a
+        assert VVector([]).length == 0
+        assert VVector([VInteger(10),VInteger(20),VInteger(30)]).length == 3
+        assert VVector([VInteger(10),VInteger(20),VInteger(30)]).get(0).value == 10
+        assert VVector([VInteger(10),VInteger(20),VInteger(30)]).get(1).value == 20
+        assert VVector([VInteger(10),VInteger(20),VInteger(30)]).get(2).value == 30
+        #2b
+        assert EVector([]).eval().length == 0
+        assert EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().length == 3
+        assert EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().get(0).value == 10
+        assert EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().get(1).value == 20
+        assert EVector([EInteger(10),EInteger(20),EInteger(30)]).eval().get(2).value == 30
+        assert EVector([EPlus(EInteger(1),EInteger(2)),EInteger(0)]).eval().length == 2
+        assert EVector([EPlus(EInteger(1),EInteger(2)),EInteger(0)]).eval().get(0).value == 3
+        assert EVector([EPlus(EInteger(1),EInteger(2)),EInteger(0)]).eval().get(1).value == 0
+        assert EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().length == 2
+        assert EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(0).value == True
+        assert EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(1).value == False
+        #2c
+        assert pair(EPlus(v1,v2).eval()) == (35, 69)
+        assert pair(EMinus(v1,v2).eval()) == (-31, -63)
+        assert pair(EAnd(b1,b2).eval()) == (False, False)
+        assert pair(EOr(b1,b2).eval()) == (True, False)
+        assert pair(ENot(b1).eval()) == (False, True)
+
+if __name__ == '__main__':
+    unittest.main()
+
