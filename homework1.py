@@ -151,11 +151,14 @@ class EMinus (Exp):
 
     def eval (self):
         v1 = self._exp1.eval()
+        print v1.value
         v2 = self._exp2.eval()
+        print v2.value
         if v1.type == "vector":
             minus_vector = []
             for i in range(len(v1.vector)):
-                minus_vector.append(EMinus(v1.vector[i], v2.vector[i]))
+                print "***", v1.vector[i].value
+                minus_vector.append(EMinus(EInterger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
             return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
@@ -365,12 +368,23 @@ class EDiv(Exp):
 # print ETimes(v1,EMinus(v2,v2)).eval().value
 # # 0
 
-<<<<<<< HEAD
 # print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
 
 #
 # Tests
 #
+v1 = EVector([EInteger(2),EInteger(3)])
+v2 = EVector([EInteger(33),EInteger(66)])
+b1 = EVector([EBoolean(True),EBoolean(False)])
+b2 = EVector([EBoolean(False),EBoolean(False)])
+
+print  pair(EPlus(v1,v2).eval()) #== (35, 69)
+print pair(EMinus(v1,v2).eval())# == (-31, -63)
+print EMinus(EInteger(4), EInteger(1)).eval().value
+# assert pair(EAnd(b1,b2).eval()) == (False, False)
+# assert pair(EOr(b1,b2).eval()) == (True, False)
+# assert pair(ENot(b1).eval()) == (False, True)
+
 
 class PLTest(unittest.TestCase):
     def testSet(self):
@@ -429,24 +443,22 @@ class PLTest(unittest.TestCase):
         assert pair(EOr(b1,b2).eval()) == (True, False)
         assert pair(ENot(b1).eval()) == (False, True)
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()
 
-=======
+# half = EDiv(EInteger(1),EInteger(2))
+# third = EDiv(EInteger(1),EInteger(3))
 
-half = EDiv(EInteger(1),EInteger(2))
-third = EDiv(EInteger(1),EInteger(3))
-
-print rat(EPlus(half,third).eval())
-# '5/6'
-print rat(EPlus(half,EInteger(1)).eval())
-# '3/2'
-print rat(EMinus(half,third).eval())
-# '1/6'
-print rat(EMinus(half,EInteger(1)).eval())
-# '-1/2'
+# print rat(EPlus(half,third).eval())
+# # '5/6'
+# print rat(EPlus(half,EInteger(1)).eval())
+# # '3/2'
+# print rat(EMinus(half,third).eval())
+# # '1/6'
+# print rat(EMinus(half,EInteger(1)).eval())
+# # '-1/2'
 # print rat(ETimes(half,third).eval())
 # # '1/6'
 # print rat(ETimes(half,EInteger(1)).eval())
 # '1/2'
->>>>>>> f602bba552f82028f1e25ce0dfc3102f301876e3
+
