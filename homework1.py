@@ -150,14 +150,11 @@ class EMinus (Exp):
         return "EMinus({},{})".format(self._exp1,self._exp2)
 
     def eval (self):
-        print "@@@@", self._exp1.eval()
         v1 = self._exp1.eval()
         v2 = self._exp2.eval()
         if v1.type == "vector":
             minus_vector = []
             for i in range(len(v1.vector)):
-                print "***", v1.vector[i].value
-                print "*******",v1.vector[i]
                 minus_vector.append(EMinus(EInteger(v1.vector[i].value), EInteger(v2.vector[i].value)).eval())
             return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
@@ -231,7 +228,6 @@ class EIf (Exp):
             return self._else.eval()
 
 
-
 class EIsZero (Exp):
     def __init__ (self,e):
         self._exp=e
@@ -252,12 +248,11 @@ class EAnd(Exp):
         if v1.type == "vector":
             sum_vector = []
             for i in range(len(v1.vector)):
-                sum_vector.append(EAnd(v1.vector[i], v2.vector[i]))
+                sum_vector.append(EAnd(EBoolean(v1.vector[i].value), EBoolean(v2.vector[i].value)).eval())
             return VVector(sum_vector)
         if v1.type == "boolean" and v2.type == "boolean":
             return EIf(EBoolean(v1.value==False),EBoolean(False),EIf(EBoolean(v2.value==False),EBoolean(False),EBoolean(True))).eval()
         raise Exception ("Runtime error: conditions are not booleans")
-
 
 class EOr(Exp):
     def __init__ (self,e1,e2):
@@ -269,7 +264,7 @@ class EOr(Exp):
         if v1.type == "vector":
             sum_vector = []
             for i in range(len(v1.vector)):
-                sum_vector.append(EOr(v1.vector[i], v2.vector[i]))
+                sum_vector.append(EOr(EBoolean(v1.vector[i].value), EBoolean(v2.vector[i].value)).eval())
             return VVector(sum_vector)
         if v1.type == "boolean" and v2.type == "boolean":
             return EIf(EBoolean(v1.value==True),EBoolean(True),EIf(EBoolean(v2.value==True),EBoolean(True),EBoolean(False))).eval()
@@ -284,11 +279,11 @@ class ENot(Exp):
         if v.type == "vector":
             sum_vector = []
             for i in range(len(v.vector)):
-                sum_vector.append(ENot(v.vector[i]))
+                sum_vector.append(ENot(EBoolean(v.vector[i].value)).eval())
             return VVector(sum_vector)
         if v.type == "boolean":
             return EBoolean(not v.value).eval()
-        raise Exception ("Runtime error: condition is not boolean")     
+        raise Exception ("Runtime error: condition is not boolean")
 
 
 class EVector(Exp):
@@ -355,19 +350,27 @@ class EDiv(Exp):
 
 #
 # Tests
-#
-v1 = EVector([EInteger(2),EInteger(3)])
-v2 = EVector([EInteger(33),EInteger(66)])
-b1 = EVector([EBoolean(True),EBoolean(False)])
-b2 = EVector([EBoolean(False),EBoolean(False)])
+# #
+# v1 = EVector([EInteger(2),EInteger(3)])
+# v2 = EVector([EInteger(33),EInteger(66)])
+# b1 = EVector([EInteger(2),EInteger(3)])
+# b2 = EVector([EInteger(33),EInteger(66)])
 
-print  pair(EPlus(v1,v2).eval()) #== (35, 69)
-print pair(EMinus(v1,v2).eval())# == (-31, -63)
-print EMinus(EInteger(4), EInteger(1)).eval().value
+# print pair(EPlus(v1,v2).eval()) #== (35, 69)
+# print pair(EMinus(b1,b2).eval())# == (-31, -63)
+# print EMinus(EInteger(4), EInteger(1)).eval().value
 # assert pair(EAnd(b1,b2).eval()) == (False, False)
 # assert pair(EOr(b1,b2).eval()) == (True, False)
 # assert pair(ENot(b1).eval()) == (False, True)
-
+# b1 = EVector([EBoolean(True),EBoolean(False)])
+# b2 = EVector([EBoolean(False),EBoolean(False)])
+# print pair(EAnd(b1,b2).eval())
+# b1 = EVector([EBoolean(True),EBoolean(False)])
+# b2 = EVector([EBoolean(False),EBoolean(False)])
+# print pair(EOr(b1,b2).eval())
+# b1 = EVector([EBoolean(True),EBoolean(False)])
+# b2 = EVector([EBoolean(False),EBoolean(False)])
+# print pair(ENot(b1).eval())
 
 class PLTest(unittest.TestCase):
     def testSet(self):
@@ -378,6 +381,8 @@ class PLTest(unittest.TestCase):
         v2 = EVector([EInteger(33),EInteger(66)])
         b1 = EVector([EBoolean(True),EBoolean(False)])
         b2 = EVector([EBoolean(False),EBoolean(False)])
+        m1 = EVector([EInteger(2),EInteger(3)])
+        m2 = EVector([EInteger(33),EInteger(66)])
         #test cases
         #1a
         assert EIsZero(EInteger(0)).eval().value == True
@@ -421,13 +426,13 @@ class PLTest(unittest.TestCase):
         assert EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(1).value == False
         #2c
         assert pair(EPlus(v1,v2).eval()) == (35, 69)
-        assert pair(EMinus(v1,v2).eval()) == (-31, -63)
+        assert pair(EMinus(m1,m2).eval()) == (-31, -63)
         assert pair(EAnd(b1,b2).eval()) == (False, False)
         assert pair(EOr(b1,b2).eval()) == (True, False)
         assert pair(ENot(b1).eval()) == (False, True)
 
-# if __name__ == '__main__':
-#     unittest.main()
+if __name__ == '__main__':
+    unittest.main()
 
 # half = EDiv(EInteger(1),EInteger(2))
 # third = EDiv(EInteger(1),EInteger(3))
@@ -444,4 +449,3 @@ class PLTest(unittest.TestCase):
 # # '1/6'
 # print rat(ETimes(half,EInteger(1)).eval())
 # '1/2'
-
