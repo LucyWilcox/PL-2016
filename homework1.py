@@ -292,9 +292,10 @@ class EVector(Exp):
         self.vector = e
 
     def eval(self):
-        for i, v in enumerate(self.vector):
-            self.vector[i] = v.eval()
-        return VVector(self.vector)
+        new_vector = []
+        for v in self.vector:
+            new_vector.append(v.eval())
+        return VVector(new_vector)
 
 
 class EDiv(Exp):
@@ -324,14 +325,8 @@ class PLTest(unittest.TestCase):
         ff = EBoolean(False)
         v1 = EVector([EInteger(2),EInteger(3)])
         v2 = EVector([EInteger(33),EInteger(66)])
-        ba1 = EVector([EBoolean(True),EBoolean(False)])
-        ba2 = EVector([EBoolean(False),EBoolean(False)])
-        bo1 = EVector([EBoolean(True),EBoolean(False)])
-        bo2 = EVector([EBoolean(False),EBoolean(False)])
-        bn1 = EVector([EBoolean(True),EBoolean(False)])
-        bn2 = EVector([EBoolean(False),EBoolean(False)])
-        m1 = EVector([EInteger(2),EInteger(3)])
-        m2 = EVector([EInteger(33),EInteger(66)])
+        b1 = EVector([EBoolean(True),EBoolean(False)])
+        b2 = EVector([EBoolean(False),EBoolean(False)])
         half = EDiv(EInteger(1),EInteger(2))
         third = EDiv(EInteger(1),EInteger(3))
         #test cases
@@ -377,10 +372,10 @@ class PLTest(unittest.TestCase):
         assert EVector([EBoolean(True),EAnd(EBoolean(True),EBoolean(False))]).eval().get(1).value == False
         #2c
         assert pair(EPlus(v1,v2).eval()) == (35, 69)
-        assert pair(EMinus(m1,m2).eval()) == (-31, -63)
-        assert pair(EAnd(ba1,ba2).eval()) == (False, False)
-        assert pair(EOr(bo1,bo2).eval()) == (True, False)
-        assert pair(ENot(bn1).eval()) == (False, True)
+        assert pair(EMinus(v1,v2).eval()) == (-31, -63)
+        assert pair(EAnd(b1,b2).eval()) == (False, False)
+        assert pair(EOr(b1,b2).eval()) == (True, False)
+        assert pair(ENot(b1).eval()) == (False, True)
         #2d
         assert ETimes(EVector([EInteger(2),EInteger(3)]),EVector([EInteger(33),EInteger(66)])).eval().value == 264
         assert ETimes(EVector([EInteger(2),EInteger(3)]),EPlus(EVector([EInteger(33),EInteger(66)]),EVector([EInteger(33),EInteger(66)]))).eval().value == 528
