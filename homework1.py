@@ -125,6 +125,17 @@ class EPlus (Exp):
             return VVector(sum_vector)
         elif v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value + v2.value)
+        elif v1.type == "rational" or v2.type == "rational":
+            if v1.type == "integer":
+                v1 = VRational(v1.value, VInteger(1).value)
+            if v2.type == "integer":
+                v2 = VRational(v2.value, VInteger(1).value)
+            left = ETimes(EInteger(v1.numer), EInteger(v2.denom)).eval().value
+            right = ETimes(EInteger(v1.denom), EInteger(v2.numer)).eval().value
+            numer = EPlus(EInteger(left),EInteger(right)).eval().value
+            denom = ETimes(EInteger(v2.denom), EInteger(v1.denom)).eval().value
+            return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
+
         raise Exception ("Runtime error: trying to add non-numbers")
 
 
@@ -148,6 +159,17 @@ class EMinus (Exp):
             return VVector(minus_vector)
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value - v2.value)
+        if v1.type == "rational" or v2.type == "rational":
+            if v1.type == "integer":
+                v1 = VRational(v1.value, VInteger(1).value)
+            if v2.type == "integer":
+                v2 = VRational(v2.value, VInteger(1).value)
+            left = ETimes(EInteger(v1.numer), EInteger(v2.denom)).eval().value
+            right = ETimes(EInteger(v1.denom), EInteger(v2.numer)).eval().value
+            numer = EMinus(EInteger(left),EInteger(right)).eval().value
+            denom = ETimes(EInteger(v2.denom), EInteger(v1.denom)).eval().value
+            return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
+
         raise Exception ("Runtime error: trying to subtract non-numbers")
 
 
@@ -174,6 +196,14 @@ class ETimes (Exp):
             return dot_product.eval()
         if v1.type == "integer" and v2.type == "integer":
             return VInteger(v1.value * v2.value)
+        if v1.type == "rational" or v2.type == "rational":
+            if v1.type == "integer":
+                v1 = VRational(v1.value, VInteger(1).value)
+            if v2.type == "integer":
+                v2 = VRational(v2.value, VInteger(1).value)
+            numer = ETimes(EInteger(v1.numer), EInteger(v2.numer)).eval().value
+            denom = ETimes(EInteger(v2.denom), EInteger(v1.denom)).eval().value
+            return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
         raise Exception ("Runtime error: trying to multiply non-numbers")
 
 
@@ -300,8 +330,6 @@ class EDiv(Exp):
             v1 = VRational(v1.value, VInteger(1).value)
         if v2.type == "integer":
             v2 = VRational(v2.value, VInteger(1).value)
-        v1_type = getattr(v1, "type", False)
-        v2_type = getattr(v2, "type", False)
         numer = ETimes(EInteger(v1.numer), EInteger(v2.denom)).eval().value
         denom = ETimes(EInteger(v2.numer), EInteger(v1.denom)).eval().value   
         return VRational(EInteger(numer).eval().value, EInteger(denom).eval().value)
@@ -337,6 +365,7 @@ class EDiv(Exp):
 # print ETimes(v1,EMinus(v2,v2)).eval().value
 # # 0
 
+<<<<<<< HEAD
 # print VVector([VInteger(10),VInteger(20),VInteger(30)]).length
 
 #
@@ -403,3 +432,21 @@ class PLTest(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+=======
+
+half = EDiv(EInteger(1),EInteger(2))
+third = EDiv(EInteger(1),EInteger(3))
+
+print rat(EPlus(half,third).eval())
+# '5/6'
+print rat(EPlus(half,EInteger(1)).eval())
+# '3/2'
+print rat(EMinus(half,third).eval())
+# '1/6'
+print rat(EMinus(half,EInteger(1)).eval())
+# '-1/2'
+# print rat(ETimes(half,third).eval())
+# # '1/6'
+# print rat(ETimes(half,EInteger(1)).eval())
+# '1/2'
+>>>>>>> f602bba552f82028f1e25ce0dfc3102f301876e3
