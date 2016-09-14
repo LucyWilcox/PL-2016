@@ -119,6 +119,32 @@ class ELet (Exp):
                     self._e1.substitute(id,new_e),
                     self._e2.substitute(id,new_e))
 
+class ELetN (Exp):
+    # local binding
+
+    def __init__ (self,bindings,exp):
+        self._bindings = bindings
+        self._exp = exp
+
+    def __str__ (self):
+        return "ELet({},{})".format(self._bindings,self._exp)
+
+    def eval (self,prim_dict):
+        for i in self._bindings:
+            new_exp = self._exp.substitute(i[0], i[1])
+            print new_exp.eval(INITIAL_PRIM_DICT).value
+            
+        # return new_exp.eval(prim_dict)
+        # new_exp = self._exp.substitute(self._bindings,self._exp)
+        # print "new_exp", new_exp
+        # return new_exp.eval(prim_dict)
+
+    def substitute (self,id,new_e):
+        # return ELetN(self._id, self._exp.substitute(id,new_e))
+        for i in id:
+            return ELetN(self._i,
+                        self._exp.substitute(i,new_e))
+
 
 class EId (Exp):
     # identifier
@@ -136,7 +162,6 @@ class EId (Exp):
         if id == self._id:
             return new_e
         return self
-
 
     
 #
@@ -158,9 +183,6 @@ class VBoolean (Value):
     def __init__ (self,b):
         self.value = b
         self.type = "boolean"
-
-
-
 
 
 # Primitive operations
@@ -188,3 +210,8 @@ INITIAL_PRIM_DICT = {
     "*": oper_times,
     "-": oper_minus
 }
+
+print ELetN([('x',EInteger(10))], EPrimCall("*", [EId('x'), EId('x')])).eval(INITIAL_PRIM_DICT)
+# print ELet("x", EInteger(10), EInteger(20)).eval(EPrimCall("*",[EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).value
+# print ELetN([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
+#     EPrimCall("*",[EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT)
