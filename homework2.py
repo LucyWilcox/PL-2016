@@ -95,33 +95,33 @@ class EIf (Exp):
                    self._else.substitute(id,new_e))
 
 
+# class ELet (Exp):
+#     # local binding
+
+#     def __init__ (self,id,e1,e2):
+#         self._id = id
+#         self._e1 = e1
+#         self._e2 = e2
+
+#     def __str__ (self):
+#         return "ELet({},{},{})".format(self._id,self._e1,self._e2)
+
+#     def eval (self,prim_dict):
+#         new_e2 = self._e2.substitute(self._id,self._e1)
+#         return new_e2.eval(prim_dict)
+
+#     def substitute (self,id,new_e):
+#         if id == self._id:
+#             print "in"
+#             return ELet(self._id,
+#                         self._e1.substitute(id,new_e),
+#                         self._e2)
+#         return ELet(self._id,
+#                     self._e1.substitute(id,new_e),
+#                     self._e2.substitute(id,new_e))
+
+
 class ELet (Exp):
-    # local binding
-
-    def __init__ (self,id,e1,e2):
-        self._id = id
-        self._e1 = e1
-        self._e2 = e2
-
-    def __str__ (self):
-        return "ELet({},{},{})".format(self._id,self._e1,self._e2)
-
-    def eval (self,prim_dict):
-        new_e2 = self._e2.substitute(self._id,self._e1)
-        return new_e2.eval(prim_dict)
-
-    def substitute (self,id,new_e):
-        if id == self._id:
-            print "in"
-            return ELet(self._id,
-                        self._e1.substitute(id,new_e),
-                        self._e2)
-        return ELet(self._id,
-                    self._e1.substitute(id,new_e),
-                    self._e2.substitute(id,new_e))
-
-
-class ELetN (Exp):
     # local binding
 
     def __init__ (self,bindings,exp):
@@ -129,7 +129,7 @@ class ELetN (Exp):
         self._exp = exp
 
     def __str__ (self):
-        return "ELetN({},{})".format(self._bindings,self._exp)
+        return "ELet({},{})".format(self._bindings,self._exp)
 
     def eval (self,prim_dict):
         for i in self._bindings:
@@ -138,14 +138,16 @@ class ELetN (Exp):
 
     def substitute (self, i1, i2):
         if i1 not in [x[0] for x in self._bindings]:
-            return ELetN(self._bindings, self._exp.substitute(i1, i2))
+            return ELet(self._bindings, self._exp.substitute(i1, i2))
         else:
             bindings = self._bindings
             for b in self._bindings:
                 if i1 == b[0]:
-                    bindings.remove(b)
-                    bindings.append((b[1]._id, i2))
-                return ELetN(bindings, self._exp)
+                    if hasattr(b[1], "_id"):
+                        print "yes"
+                        bindings.remove(b)
+                        bindings.append((b[1]._id, i2))
+                return ELet(bindings, self._exp)
 
 class ELetS (Exp):
     # local binding
@@ -238,12 +240,20 @@ INITIAL_PRIM_DICT = {
     "-": oper_minus
 }
 
-print ELet('x', EInteger(10), EPrimCall("+", [EId('x'), EId('x')])).eval(INITIAL_PRIM_DICT).value
-print ELetN([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
-print ELetN([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
+print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
+print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
-print ELetN([("a",EInteger(5)),
+print ELet([("a",EInteger(5)),
         ("b",EInteger(20))],
-       ELetN([("a",EId("b")),
+       ELet([("a",EId("b")),
              ("b",EId("a"))],
             EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
+print ELet([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
+print ELet([("a",EInteger(99)),
+          ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
+print ELet([("a",EInteger(99)),
+          ("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value
+print ELet([("a",EInteger(99))],
+         ELet([("a",EInteger(66)),
+               ("b",EId("a"))],
+              EId("a"))).eval(INITIAL_PRIM_DICT).value
