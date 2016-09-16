@@ -120,13 +120,13 @@ class ELet (Exp):
                     self._e1.substitute(id,new_e),
                     self._e2.substitute(id,new_e))
 
+
 class ELetN (Exp):
     # local binding
 
     def __init__ (self,bindings,exp):
         self._bindings = bindings
         self._exp = exp
-        print exp
 
     def __str__ (self):
         return "ELetN({},{})".format(self._bindings,self._exp)
@@ -134,11 +134,19 @@ class ELetN (Exp):
     def eval (self,prim_dict):
         for i in self._bindings:
             self._exp = self._exp.substitute(i[0], i[1])
-            print self._exp
         return self._exp.eval(INITIAL_PRIM_DICT)
 
-    def substitute (self,i1,i2):
-        return ELetN(self._bindings, self._exp.substitute(i1, i2))
+    def substitute (self, i1, i2):
+        if i1 not in [x[0] for x in self._bindings]:
+            return ELetN(self._bindings, self._exp.substitute(i1, i2))
+        else:
+            bindings = self._bindings
+            for b in self._bindings:
+                if i1 == b[0]:
+                    bindings.remove(b)
+                    bindings.append((b[1]._id, i2))
+                return ELetN(bindings, self._exp)
+
 
 
 class EId (Exp):
@@ -206,8 +214,7 @@ INITIAL_PRIM_DICT = {
     "-": oper_minus
 }
 
-# print ELet('x', EInteger(10), EPrimCall("+", [EId('x'), EId('x')])).eval(INITIAL_PRIM_DICT).value
-
+print ELet('x', EInteger(10), EPrimCall("+", [EId('x'), EId('x')])).eval(INITIAL_PRIM_DICT).value
 print ELetN([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
 print ELetN([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
@@ -216,15 +223,3 @@ print ELetN([("a",EInteger(5)),
        ELetN([("a",EId("b")),
              ("b",EId("a"))],
             EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
-# print ELet("x", EInteger(10), EInteger(20)).eval(EPrimCall("*",[EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).value
-# print ELetN([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-#     EPrimCall("*",[EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT)
-# print ELetS([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-#        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT)
-
-# print ELetS([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-#        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT)
-
-# print ELetN([("b", EInteger(10))], ELetS([("a", EId("b")), ("b", EId("a"))], EPrimCall("-", [EId("a"), EId("b")]))).eval(INITIAL_PRIM_DICT)
-# print ELetS([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-#        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
