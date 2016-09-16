@@ -140,14 +140,16 @@ class ELet (Exp):
         if i1 not in [x[0] for x in self._bindings]:
             return ELet(self._bindings, self._exp.substitute(i1, i2))
         else:
-            bindings = self._bindings
             for b in self._bindings:
-                if i1 == b[0]:
-                    if hasattr(b[1], "_id"):
-                        print "yes"
-                        bindings.remove(b)
-                        bindings.append((b[1]._id, i2))
-                return ELet(bindings, self._exp)
+                if hasattr(b[1], "_id"):
+                    if i1 == b[0]:
+                        self._bindings.remove(b)
+                        self._bindings.append((b[1]._id, i2))
+                        return ELet(self._bindings, self._exp)
+                    elif i1 == b[1]._id:
+                        self._bindings.remove(b)
+                        self._bindings.append((b[0], i2))
+                        return ELet(self._bindings, self._exp)
 
 class ELetS (Exp):
     # local binding
@@ -257,3 +259,7 @@ print ELet([("a",EInteger(99))],
          ELet([("a",EInteger(66)),
                ("b",EId("a"))],
               EId("a"))).eval(INITIAL_PRIM_DICT).value
+print ELet([("a",EInteger(99))],
+         ELet([("a",EInteger(66)),
+               ("b",EId("a"))],
+              EId("b"))).eval(INITIAL_PRIM_DICT).value
