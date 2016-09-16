@@ -134,7 +134,7 @@ class ELetN (Exp):
     def eval (self,prim_dict):
         for i in self._bindings:
             self._exp = self._exp.substitute(i[0], i[1])
-        return self._exp.eval(INITIAL_PRIM_DICT)
+        return self._exp.eval(prim_dict)
 
     def substitute (self, i1, i2):
         if i1 not in [x[0] for x in self._bindings]:
@@ -147,7 +147,31 @@ class ELetN (Exp):
                     bindings.append((b[1]._id, i2))
                 return ELetN(bindings, self._exp)
 
+class ELetS (Exp):
+    # local binding
 
+    def __init__ (self,bindings,exp):
+        self._bindings = bindings
+        self._exp = exp
+
+    def __str__ (self):
+        return "ELetS({},{})".format(self._bindings,self._exp)
+
+    def eval (self,prim_dict):
+        for i in self._bindings:
+            self._exp = self._exp.substitute(i[0], i[1])
+        return self._exp.eval(prim_dict)
+
+    def substitute (self, i1, i2):
+        if i1 not in [x[0] for x in self._bindings]:
+            return ELetN(self._bindings, self._exp.substitute(i1, i2))
+        else:
+            bindings = self._bindings
+            for b in self._bindings:
+                if i1 == b[0]:
+                    bindings.remove(b)
+                    bindings.append((b[1]._id, i2))
+                return ELetN(bindings, self._exp)
 
 class EId (Exp):
     # identifier
