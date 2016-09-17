@@ -34,7 +34,7 @@ class EInteger (Exp):
     def __str__ (self):
         return "EInteger({})".format(self._integer)
 
-    def eval (self,prim_dict):
+    def eval (self,prim_dict, fun_dict = []):
         return VInteger(self._integer)
 
     def substitute (self,id,new_e):
@@ -50,7 +50,7 @@ class EBoolean (Exp):
     def __str__ (self):
         return "EBoolean({})".format(self._boolean)
 
-    def eval (self,prim_dict):
+    def eval (self,prim_dict, fun_dict =[]):
         return VBoolean(self._boolean)
 
     def substitute (self,id,new_e):
@@ -66,8 +66,8 @@ class EPrimCall (Exp):
     def __str__ (self):
         return "EPrimCall({},[{}])".format(self._name,",".join([ str(e) for e in self._exps]))
 
-    def eval (self,prim_dict):
-        vs = [ e.eval(prim_dict) for e in self._exps ]
+    def eval (self,prim_dict, fun_dict = []):
+        vs = [ e.eval(prim_dict, fun_dict) for e in self._exps ]
         return apply(prim_dict[self._name],vs)
 
     def substitute (self,id,new_e):
@@ -86,45 +86,19 @@ class EIf (Exp):
     def __str__ (self):
         return "EIf({},{},{})".format(self._cond,self._then,self._else)
 
-    def eval (self,prim_dict):
-        v = self._cond.eval(prim_dict)
+    def eval (self,prim_dict, fun_dict = []):
+        v = self._cond.eval(prim_dict, fun_dict)
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
-            return self._then.eval(prim_dict)
+            return self._then.eval(prim_dict, fun_dict)
         else:
-            return self._else.eval(prim_dict)
+            return self._else.eval(prim_dict, fun_dict)
 
     def substitute (self,id,new_e):
         return EIf(self._cond.substitute(id,new_e),
                    self._then.substitute(id,new_e),
                    self._else.substitute(id,new_e))
-
-
-# class ELet (Exp):
-#     # local binding
-
-#     def __init__ (self,id,e1,e2):
-#         self._id = id
-#         self._e1 = e1
-#         self._e2 = e2
-
-#     def __str__ (self):
-#         return "ELet({},{},{})".format(self._id,self._e1,self._e2)
-
-#     def eval (self,prim_dict):
-#         new_e2 = self._e2.substitute(self._id,self._e1)
-#         return new_e2.eval(prim_dict)
-
-#     def substitute (self,id,new_e):
-#         if id == self._id:
-#             print "in"
-#             return ELet(self._id,
-#                         self._e1.substitute(id,new_e),
-#                         self._e2)
-#         return ELet(self._id,
-#                     self._e1.substitute(id,new_e),
-#                     self._e2.substitute(id,new_e))
 
 
 class ELet (Exp):
@@ -137,10 +111,10 @@ class ELet (Exp):
     def __str__ (self):
         return "ELet({},{})".format(self._bindings,self._exp)
 
-    def eval (self,prim_dict):
+    def eval (self,prim_dict, fun_dict = []):
         for i in self._bindings:
             self._exp = self._exp.substitute(i[0], i[1])
-        return self._exp.eval(prim_dict)
+        return self._exp.eval(prim_dict, fun_dict)
 
     def substitute (self, id, new_e):
         new_bindings = []
@@ -162,10 +136,10 @@ class ELetS (Exp):
     def __str__ (self):
         return "ELetS({},{})".format(self._id,self._e1,self._e2)
 
-    def eval (self,prim_dict):
+    def eval (self,prim_dict, fun_dict = []):
         for i in self._bindings:
             self._exp = self._exp.substitute(i[0], i[1]) 
-        return self._exp.eval(prim_dict)
+        return self._exp.eval(prim_dict, fun_dict)
 
     def substitute (self,id,new_e):
         new_binds = []
@@ -190,12 +164,11 @@ class ELetV (Exp):
     def __str__ (self):
         return "ELetV({},{},{})".format(self._id,self._e1,self._e2)
 
-    def eval (self,prim_dict):
-        new_e2 = self._e2.substitute(self._id,EInteger(self._e1.eval(INITIAL_PRIM_DICT).value))
-        return new_e2.eval(prim_dict)
+    def eval (self,prim_dict, fun_dict = []):
+        new_e2 = self._e2.substitute(self._id,EInteger(self._e1.eval(prim_dict, fun_dict).value))
+        return new_e2.eval(prim_dict, fun_dict)
 
     def substitute (self,id,new_e):
-        print ("new_e",new_e.eval(INITIAL_PRIM_DICT).value)
         if id == self._id:
             return ELetV(self._id,
                         self._e1.substitute(id,new_e),
@@ -213,7 +186,7 @@ class EId (Exp):
     def __str__ (self):
         return "EId({})".format(self._id)
 
-    def eval (self,prim_dict):
+    def eval (self,prim_dict, fun_dict = []):
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
 
     def substitute (self,id,new_e):
@@ -285,27 +258,23 @@ class ECall (Exp):
         return "ECall({},[{}])".format(self._name,",".join([ str(e) for e in self._exps]))
 
     def eval (self,prim_dict,fun_dict):
-        # vs = [ e.eval(prim_dict) for e in self._exps ]
-        # return apply(prim_dict[self._name],vs)
         vs = [ e for e in self._exps ]
         if len(vs)==1:
             variable = fun_dict[self._name]["params"][0]
             number = vs[0]
             expression = fun_dict[self._name]["body"]
-            print (variable,number)
-            return ELet([(variable,number)],expression).eval(INITIAL_PRIM_DICT)
+            return ELet([(variable,number)],expression).eval(prim_dict, fun_dict)
         else:
             x = fun_dict[self._name]["params"][0]
             y = fun_dict[self._name]["params"][1]
             xNum = vs[0]
             yNum = vs[1]
-            print (x,y,xNum,yNum)
             expression = fun_dict[self._name]["body"]
-            return ELet([(x,xNum),(y,yNum)],expression).eval(INITIAL_PRIM_DICT)
+            return ELet([(x,xNum),(y,yNum)],expression).eval(prim_dict, fun_dict)
 
     def substitute (self,id,new_e):
         new_es = [ e.substitute(id,new_e) for e in self._exps]
-        return ECall(self._name,new_es)
+        return ECall(self._name, new_es)
 
 FUN_DICT = {
       "square": {"params":["x"],
@@ -323,32 +292,8 @@ FUN_DICT = {
                                                 ECall("sum_from_to",[ECall("+1",[EId("s")]),
                                                                      EId("e")])]))}
     }
-# ECall("+1",
-#           [ECall("+1",
-#                  [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
 
 
-ECall("+1",
-          [ECall("+1",
-                 [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-
-# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("square",[EInteger(5)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("+1",
-#           [EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("=",[EInteger(1),EInteger(2)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("=",[EInteger(1),EInteger(1)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("+1",
-#           [EPrimCall("+",[EInteger(100),EInteger(200)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print  ECall("+1",[ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-
-
-# ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
-#           ELetV("b",EInteger(20),
-#                 EPrimCall("*",[EId("a"),EId("a")]))
-#           ).eval(INITIAL_PRIM_DICT).value
-
-# ECall("+1",[EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
 # Tests for 1a
 # print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
 # print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
@@ -373,7 +318,7 @@ ECall("+1",
 #               EId("b"))).eval(INITIAL_PRIM_DICT).value
 
 
-#Tests for 1b
+# Tests for 1b
 # print ELetS([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
 # print ELetS([("a",EInteger(99)),
 #            ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
@@ -405,3 +350,18 @@ ECall("+1",
 #           ELetV("b",EInteger(20),
 #                 EPrimCall("*",[EId("a"),EId("a")]))
 #           ).eval(INITIAL_PRIM_DICT).value
+
+#Tests for problem 3
+# print ECall("+1",
+#           [ECall("+1",
+#                  [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("square",[EInteger(5)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("+1",
+#           [EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("=",[EInteger(1),EInteger(2)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("=",[EInteger(1),EInteger(1)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("+1",
+#           [EPrimCall("+",[EInteger(100),EInteger(200)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print  ECall("+1",[ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
