@@ -191,7 +191,6 @@ class ELetV (Exp):
         return "ELetV({},{},{})".format(self._id,self._e1,self._e2)
 
     def eval (self,prim_dict):
-        print EInteger(self._e1.eval(INITIAL_PRIM_DICT).value)
         new_e2 = self._e2.substitute(self._id,EInteger(self._e1.eval(INITIAL_PRIM_DICT).value))
         return new_e2.eval(prim_dict)
 
@@ -261,16 +260,95 @@ def oper_times (v1,v2):
         return VInteger(v1.value * v2.value)
     raise Exception ("Runtime error: trying to add non-numbers")
 
+def oper_zero (v1):
+       if v1.type == "integer":
+           return VBoolean(v1.value==0)
+       raise Exception ("Runtime error: type error in zero?")
 
 # Initial primitives dictionary
 
 INITIAL_PRIM_DICT = {
     "+": oper_plus,
     "*": oper_times,
-    "-": oper_minus
+    "-": oper_minus,
+    "zero?":oper_zero
 }
 
+#takes name of the function to call, and list of expressions
 
+class ECall (Exp):
+    def __init__ (self,name,es):
+        self._name = name
+        self._exps = es
+
+    def __str__ (self):
+        return "ECall({},[{}])".format(self._name,",".join([ str(e) for e in self._exps]))
+
+    def eval (self,prim_dict,fun_dict):
+        # vs = [ e.eval(prim_dict) for e in self._exps ]
+        # return apply(prim_dict[self._name],vs)
+        vs = [ e for e in self._exps ]
+        if len(vs)==1:
+            variable = fun_dict[self._name]["params"][0]
+            number = vs[0]
+            expression = fun_dict[self._name]["body"]
+            print (variable,number)
+            return ELet([(variable,number)],expression).eval(INITIAL_PRIM_DICT)
+        else:
+            x = fun_dict[self._name]["params"][0]
+            y = fun_dict[self._name]["params"][1]
+            xNum = vs[0]
+            yNum = vs[1]
+            print (x,y,xNum,yNum)
+            expression = fun_dict[self._name]["body"]
+            return ELet([(x,xNum),(y,yNum)],expression).eval(INITIAL_PRIM_DICT)
+
+    def substitute (self,id,new_e):
+        new_es = [ e.substitute(id,new_e) for e in self._exps]
+        return ECall(self._name,new_es)
+
+FUN_DICT = {
+      "square": {"params":["x"],
+                 "body":EPrimCall("*",[EId("x"),EId("x")])},
+      "=": {"params":["x","y"],
+            "body":EPrimCall("zero?",[EPrimCall("-",[EId("x"),EId("y")])])},
+
+      "+1": {"params":["x"],
+             "body":EPrimCall("+",[EId("x"),EInteger(1)])},
+
+      "sum_from_to": {"params":["s","e"],
+                      "body":EIf(ECall("=",[EId("s"),EId("e")]),
+                                 EId("s"),
+                                 EPrimCall("+",[EId("s"),
+                                                ECall("sum_from_to",[ECall("+1",[EId("s")]),
+                                                                     EId("e")])]))}
+    }
+# ECall("+1",
+#           [ECall("+1",
+#                  [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+
+
+ECall("+1",
+          [ECall("+1",
+                 [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+
+# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("square",[EInteger(5)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("+1",
+#           [EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("=",[EInteger(1),EInteger(2)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("=",[EInteger(1),EInteger(1)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print ECall("+1",
+#           [EPrimCall("+",[EInteger(100),EInteger(200)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+# print  ECall("+1",[ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
+
+
+# ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
+#           ELetV("b",EInteger(20),
+#                 EPrimCall("*",[EId("a"),EId("a")]))
+#           ).eval(INITIAL_PRIM_DICT).value
+
+# ECall("+1",[EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
 # Tests for 1a
 # print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
 # print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
