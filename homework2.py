@@ -151,6 +151,44 @@ class ELet (Exp):
                         self._bindings.append((b[0], i2))
                         return ELet(self._bindings, self._exp)
 
+
+# class ELetS (Exp):
+#     # local binding
+
+#     def __init__ (self,bindings,exp):
+#         self._bindings = bindings
+#         self._exp = exp
+
+#     def __str__ (self):
+#         return "ELetS({},{})".format(self._bindings,self._exp)
+
+#     def eval (self,prim_dict):
+#         for i in self._bindings:
+#             self._exp = self._exp.substitute(i[0], i[1])
+#         return self._exp.eval(prim_dict)
+
+#     def substitute (self, i1, i2):
+#         print "pre-bind", self._bindings
+#         # if i1 not in [x[0] for x in self._bindings]:
+#         #     print "hey"
+#         #     return ELetS(self._bindings, self._exp.substitute(i1, i2))
+#         for b in self._bindings:
+#             if i1 in [x[0] for x in self._bindings]:
+#                 print b[0], b[1], i1, i2
+#                 self._bindings.remove(b)
+#                 self._bindings.append((i1, i2))
+#                 print "post-bind", self._bindings
+#             else:
+#                 "p!!"
+#         return ELetS(self._bindings, self._exp.substitute(i1, i2))  
+#             # for b in self._bindings:
+#             #     if b[0] in [x[0] for x in self._bindings]:
+#             #         print b[0], b[1], i1, i2
+#             #         self._bindings.remove(b)
+#             #         self._bindings.append((b[0], b[1]))
+#             #         print self._bindings
+#             # return ELet(self._bindings, self._exp)
+
 class ELetS (Exp):
     # local binding
 
@@ -159,23 +197,58 @@ class ELetS (Exp):
         self._exp = exp
 
     def __str__ (self):
-        return "ELetS({},{})".format(self._bindings,self._exp)
-
+        return "ELetS({},{})".format(self._id,self._e1,self._e2)
+    
     def eval (self,prim_dict):
         for i in self._bindings:
             self._exp = self._exp.substitute(i[0], i[1])
         return self._exp.eval(prim_dict)
 
-    def substitute (self, i1, i2):
-        if i1 not in [x[0] for x in self._bindings]:
-            return ELetN(self._bindings, self._exp.substitute(i1, i2))
-        else:
-            bindings = self._bindings
-            for b in self._bindings:
-                if i1 == b[0]:
-                    bindings.remove(b)
-                    bindings.append((b[1]._id, i2))
-                return ELetN(bindings, self._exp)
+    def substitute (self,id,new_e):
+        internal_binds = {}
+        new_bindings = self._bindings
+        for b in self._bindings:
+            internal_binds[b[0]] = b[1]
+            if hasattr(b[1], "_id") and b[1]._id in internal_binds.keys():
+                print b[0], internal_binds.get(b[1]._id)
+                new_bindings.remove(b)
+                new_bindings.append((b[0], internal_binds.get(b[1]._id)))
+
+        print new_bindings, "PRE"
+        for b in new_bindings:
+            print b[0], b[1], "&&&", new_e
+            if hasattr(b[1], "_id"):
+                print "EQ", b[1]._id, id, b[0]
+                if b[1]._id == id:
+                    print b, "^^^^"
+                    self._bindings.remove(b)
+                    self._bindings.append((b[0], new_e))   
+                    print b, "$$$"         
+
+        print self._bindings, "BINDINGSs"
+        return ELetS(self._bindings, self._exp)
+        print "****"
+        print id, new_e
+
+
+        # print self._exp
+        # for b in self._bindings:
+        #     print b, b[1]
+        #     if id == b[0]:
+        #         print "***"
+        #         self._bindings.remove(b)
+        #         self._bindings.append((id, new_e))
+        #     if hasattr(b[1], "_id"):
+        #         print "hhhh"
+        #         if id == b[1]._id:
+        #             print "yesb"
+        #         # if id in self._b.indings:
+        #         #     #alter self._bindings
+        #         print self._bindings
+        # return ELetS(self._bindings, self._exp)
+        # print "sub"
+        # return ELetS(self._bindings,
+        #             self._exp.substitute(id,new_e))
 
 class EId (Exp):
     # identifier
