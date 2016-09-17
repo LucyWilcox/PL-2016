@@ -4,17 +4,20 @@
 # Team members:
 #
 # Emails:
-#
+#     Lucy Wilcox <lucy.wilcox@students.olin.edu>
+#     Xiaofan Wu <xwu4@wellesley.edu>
 # Remarks:
+ We found this assignment pretty hard and went down a few wrong turns
+ before realizing that what we were doing was a lot more complecated
+ than it needed to be
 #We used:
  https://docs.racket-lang.org/guide/let.html, 
  https://books.google.com/books?id=YeJL2kechd8C&pg=PA27&lpg=PA27&dq=sequential+bindings+programming+languages&source=bl&ots=i6lZ7A-t1I&sig=GFUbweJeFPwCAFxchZGIrnCBmyc&hl=en&sa=X&ved=0ahUKEwih8ubynpfPAhVk5IMKHWDgBQsQ6AEIIzAB#v=onepage&q=sequential%20bindings%20programming%20languages&f=false
  to help us understand the bindings stuff
 
- We found this assignment pretty hard and went down a few wrong turns
- before realizing that what we were doing was a lot more complecated
- than it needed to be
 """
+
+import unittest
 
 #
 # Expressions
@@ -238,16 +241,7 @@ def oper_zero (v1):
            return VBoolean(v1.value==0)
        raise Exception ("Runtime error: type error in zero?")
 
-# Initial primitives dictionary
 
-INITIAL_PRIM_DICT = {
-    "+": oper_plus,
-    "*": oper_times,
-    "-": oper_minus,
-    "zero?":oper_zero
-}
-
-#takes name of the function to call, and list of expressions
 
 class ECall (Exp):
     def __init__ (self,name,es):
@@ -276,6 +270,15 @@ class ECall (Exp):
         new_es = [ e.substitute(id,new_e) for e in self._exps]
         return ECall(self._name, new_es)
 
+# Initial primitives dictionary
+
+INITIAL_PRIM_DICT = {
+    "+": oper_plus,
+    "*": oper_times,
+    "-": oper_minus,
+    "zero?":oper_zero
+}
+
 FUN_DICT = {
       "square": {"params":["x"],
                  "body":EPrimCall("*",[EId("x"),EId("x")])},
@@ -293,75 +296,43 @@ FUN_DICT = {
                                                                      EId("e")])]))}
     }
 
+class PLTest(unittest.TestCase):
+    def testSet(self):
+        #1a
+        assert ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value ==90
+        assert ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value == 900
+        assert ELet([("a",EInteger(5)),("b",EInteger(20))],ELet([("a",EId("b")),("b",EId("a"))],EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value ==15
+        assert ELet([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value ==99
+        assert ELet([("a",EInteger(99)),("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value == 99
+        assert ELet([("a",EInteger(99)),("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value == 66
+        assert ELet([("a",EInteger(99))],ELet([("a",EInteger(66)),("b",EId("a"))],EId("a"))).eval(INITIAL_PRIM_DICT).value == 66
+        assert ELet([("a",EInteger(99))],ELet([("a",EInteger(66)),("b",EId("a"))],EId("b"))).eval(INITIAL_PRIM_DICT).value == 99
+        #1b
+        assert ELetS([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value == 99
+        assert ELetS([("a",EInteger(99)),("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value == 99
+        assert ELetS([("a",EInteger(99)),("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value == 66
+        assert ELet([("a",EInteger(99))], ELetS([("a",EInteger(66)),("b",EId("a"))],EId("a"))).eval(INITIAL_PRIM_DICT).value == 66
+        assert ELet([("a",EInteger(99))],ELetS([("a",EInteger(66)),("b",EId("a"))],EId("b"))).eval(INITIAL_PRIM_DICT).value ==66
+        assert ELetS([("a",EInteger(5)),("b",EInteger(20))],ELetS([("a",EId("b")),("b",EId("a"))],EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value == 0
+        #2
+        assert ELetV("a",EInteger(10), EId("a")).eval(INITIAL_PRIM_DICT).value == 10
+        assert ELetV("a",EInteger(10), ELetV("b",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value == 10
+        assert ELetV("a",EInteger(10), ELetV("a",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value == 20
+        assert ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]), ELetV("b",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value == 30
+        assert ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]), ELetV("b",EInteger(20), EPrimCall("*",[EId("a"),EId("a")]))).eval(INITIAL_PRIM_DICT).value  == 900
 
-# Tests for 1a
-# print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
-# print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-#        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(5)),
-#         ("b",EInteger(20))],
-#        ELet([("a",EId("b")),
-#              ("b",EId("a"))],
-#             EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99)),
-#           ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99)),
-#           ("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99))],
-#          ELet([("a",EInteger(66)),
-#                ("b",EId("a"))],
-#               EId("a"))).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99))],
-#          ELet([("a",EInteger(66)),
-#                ("b",EId("a"))],
-#               EId("b"))).eval(INITIAL_PRIM_DICT).value
+        #3
+        assert ECall("+1", [ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 102
+        assert ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 55
+        assert ECall("square",[EInteger(5)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 25
+        assert ECall("+1", [EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 101
+        assert ECall("=",[EInteger(1),EInteger(2)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == False
+        assert ECall("=",[EInteger(1),EInteger(1)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == True
+        assert ECall("+1", [EPrimCall("+",[EInteger(100),EInteger(200)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 301
+        assert ECall("+1",[ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 102
+        assert ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value == 55
+
+if __name__ == '__main__':
+    unittest.main()
 
 
-# Tests for 1b
-# print ELetS([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
-# print ELetS([("a",EInteger(99)),
-#            ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
-# print ELetS([("a",EInteger(99)),
-#            ("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99))],
-#          ELetS([("a",EInteger(66)),
-#                 ("b",EId("a"))],
-#                EId("a"))).eval(INITIAL_PRIM_DICT).value
-# print ELet([("a",EInteger(99))],
-#          ELetS([("a",EInteger(66)),
-#                 ("b",EId("a"))],
-#                EId("b"))).eval(INITIAL_PRIM_DICT).value
-# print ELetS([("a",EInteger(5)),
-#            ("b",EInteger(20))],
-#           ELetS([("a",EId("b")),
-#                  ("b",EId("a"))],
-#                 EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
-
-#Tests for Problem 2
-# print ELetV("a",EInteger(10),EId("a")).eval(INITIAL_PRIM_DICT).value
-# print ELetV("a",EInteger(10),
-#           ELetV("b",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value
-# print ELetV("a",EInteger(10),
-#           ELetV("a",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value
-# print ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
-#           ELetV("b",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value
-# print ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
-#           ELetV("b",EInteger(20),
-#                 EPrimCall("*",[EId("a"),EId("a")]))
-#           ).eval(INITIAL_PRIM_DICT).value
-
-#Tests for problem 3
-# print ECall("+1",
-#           [ECall("+1",
-#                  [EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("square",[EInteger(5)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("+1",
-#           [EInteger(100)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("=",[EInteger(1),EInteger(2)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("=",[EInteger(1),EInteger(1)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("+1",
-#           [EPrimCall("+",[EInteger(100),EInteger(200)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print  ECall("+1",[ECall("+1",[EInteger(100)])]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
-# print ECall("sum_from_to",[EInteger(0),EInteger(10)]).eval(INITIAL_PRIM_DICT,FUN_DICT).value
