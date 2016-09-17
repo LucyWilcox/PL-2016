@@ -241,25 +241,59 @@ INITIAL_PRIM_DICT = {
     "*": oper_times,
     "-": oper_minus
 }
+class ELetV (Exp):
+    # local binding
 
-print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
-print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
-       EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(5)),
-        ("b",EInteger(20))],
-       ELet([("a",EId("b")),
-             ("b",EId("a"))],
-            EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(99)),
-          ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(99)),
-          ("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(99))],
-         ELet([("a",EInteger(66)),
-               ("b",EId("a"))],
-              EId("a"))).eval(INITIAL_PRIM_DICT).value
-print ELet([("a",EInteger(99))],
-         ELet([("a",EInteger(66)),
-               ("b",EId("a"))],
-              EId("b"))).eval(INITIAL_PRIM_DICT).value
+    def __init__ (self,id,e1,e2):
+        self._id = id
+        self._e1 = e1
+        self._e2 = e2
+
+    def __str__ (self):
+        return "ELetV({},{},{})".format(self._id,self._e1,self._e2)
+
+    def eval (self,prim_dict):
+        print EInteger(self._e1.eval(INITIAL_PRIM_DICT).value)
+        new_e2 = self._e2.substitute(self._id,EInteger(self._e1.eval(INITIAL_PRIM_DICT).value))
+        return new_e2.eval(prim_dict)
+
+    def substitute (self,id,new_e):
+        print ("new_e",new_e.eval(INITIAL_PRIM_DICT).value)
+        if id == self._id:
+            return ELetV(self._id,
+                        self._e1.substitute(id,new_e),
+                        self._e2)
+        return ELetV(self._id,
+                    self._e1.substitute(id,new_e),
+                    self._e2.substitute(id,new_e))
+
+# print ELet([('x',EInteger(10)), ('y', EInteger(9))], EPrimCall("*", [EId('x'), EId('y')])).eval(INITIAL_PRIM_DICT).value
+# print ELet([("x",EInteger(10)), ("y",EInteger(20)),("z",EInteger(30))],
+#        EPrimCall("*", [EPrimCall("+",[EId("x"),EId("y")]),EId("z")])).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(5)),
+#         ("b",EInteger(20))],
+#        ELet([("a",EId("b")),
+#              ("b",EId("a"))],
+#             EPrimCall("-",[EId("a"),EId("b")]))).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(99))],EId("a")).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(99)),
+#           ("b",EInteger(66))],EId("a")).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(99)),
+#           ("b",EInteger(66))],EId("b")).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(99))],
+#          ELet([("a",EInteger(66)),
+#                ("b",EId("a"))],
+#               EId("a"))).eval(INITIAL_PRIM_DICT).value
+# print ELet([("a",EInteger(99))],
+#          ELet([("a",EInteger(66)),
+#                ("b",EId("a"))],
+#               EId("b"))).eval(INITIAL_PRIM_DICT).value
+# print ELetV("a",EInteger(10),EId("a")).eval(INITIAL_PRIM_DICT).value
+
+# print ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
+#           ELetV("b",EInteger(20),
+#                 EPrimCall("*",[EId("a"),EId("a")]))
+#           ).eval(INITIAL_PRIM_DICT).value
+
+print ELetV("a",EPrimCall("+",[EInteger(10),EInteger(20)]),
+          ELetV("b",EInteger(20),EId("a"))).eval(INITIAL_PRIM_DICT).value
