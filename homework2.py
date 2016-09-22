@@ -10,7 +10,7 @@ Emails:
 Remarks:
  We found this assignment pretty hard and went down a few wrong turns
  before realizing that what we were doing was a lot more complecated
- than it needed to be
+ than it needed to be.
 We used:
  https://docs.racket-lang.org/guide/let.html, 
  https://books.google.com/books?id=YeJL2kechd8C&pg=PA27&lpg=PA27&dq=sequential+bindings+programming+languages&source=bl&ots=i6lZ7A-t1I&sig=GFUbweJeFPwCAFxchZGIrnCBmyc&hl=en&sa=X&ved=0ahUKEwih8ubynpfPAhVk5IMKHWDgBQsQ6AEIIzAB#v=onepage&q=sequential%20bindings%20programming%20languages&f=false
