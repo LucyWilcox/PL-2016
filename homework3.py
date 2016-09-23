@@ -288,10 +288,12 @@ def parse (input):
     #            ( * <expr> <expr> )
     #
     def getDefunDict(result):
-        name=result[2]
-        param = result[4:-3]
-        e = [-2]
-        return {"result":"function", "name": name, "params": param, "body":e}
+        name = result[2]
+        params = result[4:-3]
+        body = result[-2]
+        newFun = {name: {"params": params, "body": body}}
+        INITIAL_FUN_DICT.update(newFun)
+        return {"result":"function", "name": name, "params": params, "body": body}
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -309,8 +311,7 @@ def parse (input):
 
     pEXPR = Forward()
 
-
-    pDEFUN = "(" + Keyword("defun") + pNAME+ "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(getDefunDict)
 
     pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
@@ -334,8 +335,11 @@ def parse (input):
     pEXPR << (pINTEGER | pDEFUN | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
 
     result = pEXPR.parseString(input)[0]
-    return result    # the first element of the result is the expression
 
+    if type(result) == type(dict()):
+        return result
+    else:
+        return {"result":"expression", "expr": result}
 
 def shell ():
     # A simple shell
@@ -347,9 +351,11 @@ def shell ():
         if not inp:
             return
         exp = parse(inp)
-        print "Abstract representation:", exp
-        v = exp.eval(INITIAL_FUN_DICT)
-        print v
+        if exp["result"] == "expression":
+            print "Abstract representation:", exp
+            v = exp['expr'].eval(INITIAL_FUN_DICT)
+            print v
+
 
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
