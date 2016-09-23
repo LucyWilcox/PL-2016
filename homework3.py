@@ -10,7 +10,7 @@
 
 
 import sys
-from pyparsing import Word, Literal,  Keyword, Forward, alphas, alphanums
+from pyparsing import Word, Literal,  Keyword, Forward, alphas, alphanums, OneOrMore
 
 
 #
@@ -124,6 +124,7 @@ class ELet (Exp):
     def __init__ (self,bindings,e2):
         self._bindings = bindings
         self._e2 = e2
+        print bindings
 
     def __str__ (self):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
@@ -311,14 +312,16 @@ def parse (input):
     pBINDING = "(" + pNAME + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[2]))
 
-    pLET = "(" + Keyword("let") + "(" + pBINDING + ")" + pEXPR + ")"
-    pLET.setParseAction(lambda result: ELet([result[3]],result[5]))
+    pLET = "(" + Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
+    pLET.setParseAction(lambda result: ELet([result[i] for i in range(3, len(result) - 3)], result[len(result) - 2]))
 
     pPLUS = "(" + Keyword("+") + pEXPR + pEXPR + ")"
     pPLUS.setParseAction(lambda result: ECall("+",[result[2],result[3]]))
 
     pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
     pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
+
+    pUSERDEF = "(" + pNAME + pEXPR + ")"
 
     pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES)
 
@@ -342,5 +345,6 @@ def shell ():
 
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
+shell()
 
 
