@@ -287,7 +287,11 @@ def parse (input):
     #            ( + <expr> <expr> )
     #            ( * <expr> <expr> )
     #
-
+    def getDefunDict(result):
+        name=result[2]
+        param = result[4:-3]
+        e = [-2]
+        return {"result":"function", "name": name, "params": param, "body":e}
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -304,6 +308,10 @@ def parse (input):
     pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
 
     pEXPR = Forward()
+
+
+    pDEFUN = "(" + Keyword("defun") + pNAME+ "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pDEFUN.setParseAction(getDefunDict)
 
     pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
     pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
@@ -323,7 +331,7 @@ def parse (input):
     pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
     pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
+    pEXPR << (pINTEGER | pDEFUN | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
 
     result = pEXPR.parseString(input)[0]
     return result    # the first element of the result is the expression
