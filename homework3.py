@@ -124,7 +124,6 @@ class ELet (Exp):
     def __init__ (self,bindings,e2):
         self._bindings = bindings
         self._e2 = e2
-        print bindings
 
     def __str__ (self):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
