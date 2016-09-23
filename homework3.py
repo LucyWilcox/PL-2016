@@ -1,4 +1,4 @@
-############################################################
+"""############################################################
 # HOMEWORK 3
 #
 # Team members:
@@ -6,9 +6,11 @@
 # Emails:
 #
 # Remarks:
-#
+We used the pyparsing docs
+http://pyparsing.wikispaces.com/share/view/66929500 <- realized we could pass a function into setParseAction
 
 
+"""
 import sys
 from pyparsing import Word, Literal,  Keyword, Forward, alphas, alphanums, OneOrMore
 
