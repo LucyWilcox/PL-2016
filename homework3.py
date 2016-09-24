@@ -410,10 +410,10 @@ def parse_natural (input):
     pBINDING.setParseAction(lambda result: (result[0],result[2]))
 
     pLET =Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR
-    pLET.setParseAction(lambda result: ELet(result[2], result[3]),result[-1])
+    pLET.setParseAction(lambda result: ELet([result[i] for i in range(2, len(result) - 2)], result[-1]))
 
-    pPLUS = "(" + Keyword("+") + pEXPR + pEXPR + ")"
-    pPLUS.setParseAction(lambda result: ECall("+",[result[2],result[3]]))
+    pPLUS = pEXPR + Keyword("+") + pEXPR 
+    pPLUS.setParseAction(lambda result: ECall("+",[result[0],result[2]]))
 
     pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
     pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
@@ -421,7 +421,7 @@ def parse_natural (input):
     pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
     pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
+    pEXPR << (pINTEGER | pBOOLEAN | pIF | pLET | pIDENTIFIER | pPLUS | pTIMES | pUSERDEF)
 
     result = pEXPR.parseString(input)[0]
     if type(result) == type(dict()):
