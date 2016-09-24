@@ -122,18 +122,21 @@ class ELet (Exp):
     # local binding
     # allow multiple bindings
     # eager (call-by-avlue)
-
     def __init__ (self,bindings,e2):
         self._bindings = bindings
         self._e2 = e2
+        print self._bindings,self._e2, "***********ELET"
 
     def __str__ (self):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
 
     def eval (self,fun_dict):
+        print "came to let"
+
         # by this point, all substitutions in bindings expressions have happened already (!)
         new_e2 = self._e2
         for (id,e) in self._bindings:
+            print id,e
             v = e.eval(fun_dict)
             new_e2 = new_e2.substitute(id,EValue(v))
         return new_e2.eval(fun_dict)
@@ -358,9 +361,93 @@ def shell ():
             v = exp['expr'].eval(INITIAL_FUN_DICT)
             print v
 
+def parse_natural (input):
+    # parse a string into an element of the abstract representation
+
+    # Grammar:
+    #
+    # <expr> ::= <integer>
+    #            true
+    #            false
+    #            <identifier>
+    #            ( if <expr> <expr> <expr> )
+    #            ( let ( ( <name> <expr> ) ) <expr )
+    #            ( + <expr> <expr> )
+    #            ( * <expr> <expr> )
+    #
+    def getDefunDict(result):
+        name = result[2]
+        params = result[4:-3]
+        body = result[-2]
+        newFun = {name: {"params": params, "body": body}}
+        INITIAL_FUN_DICT.update(newFun)
+        return {"result":"function", "name": name, "params": params, "body": body}
+
+    idChars = alphas+"_+*-?!=<>"
+
+    pIDENTIFIER = Word(idChars, idChars+"0123456789")
+    pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
+
+    # A name is like an identifier but it does not return an EId...
+    pNAME = Word(idChars,idChars+"0123456789")
+
+    pINTEGER = Word("-0123456789","0123456789")
+    pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
+
+    pBOOLEAN = Keyword("true") | Keyword("false")
+    pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
+
+    pEXPR = Forward()
+
+    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pDEFUN.setParseAction(getDefunDict)
+
+    pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
+    pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
+
+
+    pBINDING = pNAME + "=" + pEXPR
+    pBINDING.setParseAction(lambda result: (result[0],result[2]))
+
+    pLET =Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR
+    pLET.setParseAction(lambda result: ELet(result[2], result[3]),result[-1])
+
+    pPLUS = "(" + Keyword("+") + pEXPR + pEXPR + ")"
+    pPLUS.setParseAction(lambda result: ECall("+",[result[2],result[3]]))
+
+    pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
+    pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
+
+    pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
+    pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
+
+    pEXPR << (pINTEGER | pBOOLEAN | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
+
+    result = pEXPR.parseString(input)[0]
+    if type(result) == type(dict()):
+        return result
+    else:
+        return {"result":"expression", "expr": result}
+
+def shell_natural ():
+    # A simple shell
+    # Repeatedly read a line of input, parse it, and evaluate the result
+
+    print "Homework 3 - Calc Language"
+    while True:
+        inp = raw_input("calc> ")
+        print inp, "*******inp"
+        if not inp:
+            return
+        exp = parse_natural(inp)
+        if exp["result"] == "expression":
+            print "Abstract representation:", exp
+            print exp['expr']
+            v = exp['expr'].eval(INITIAL_FUN_DICT)
+            print v
 
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
-shell()
+shell_natural()
 
 
