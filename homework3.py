@@ -235,11 +235,13 @@ def oper_minus (v1,v2):
     raise Exception ("Runtime error: trying to subtract non-numbers")
 
 def oper_times (v1,v2):
+    print "came to multiply*************"
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value * v2.value)
     raise Exception ("Runtime error: trying to multiply non-numbers")
 
 def oper_zero (v1):
+    print v1
     if v1.type == "integer":
         return VBoolean(v1.value==0)
     raise Exception ("Runtime error: type error in zero?")
@@ -402,9 +404,8 @@ def parse_natural (input):
     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(getDefunDict)
 
-    pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
-    pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
-
+    pIF = pEXPR + Keyword("?")  + pEXPR + ":" + pEXPR 
+    pIF.setParseAction(lambda result: EIf(result[0],result[2],result[3]))
 
     pBINDING = pNAME + "=" + pEXPR
     pBINDING.setParseAction(lambda result: (result[0],result[2]))
@@ -415,15 +416,19 @@ def parse_natural (input):
     pPLUS = pEXPR + Keyword("+") + pEXPR 
     pPLUS.setParseAction(lambda result: ECall("+",[result[0],result[2]]))
 
-    pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
-    pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
+    pTIMES = "(" + pEXPR + Keyword("*") + pEXPR + ")"
+    pTIMES.setParseAction(lambda result: ECall("*",[result[0],result[2]]))
+
+    pZERO = Keyword("zero?") + "(" + pEXPR + ")"
+    pTIMES.setParseAction(lambda result: ECall("zero?",[result[2]]))
 
     pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
     pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIF | pLET | pIDENTIFIER | pPLUS | pTIMES | pUSERDEF)
+    pEXPR << (pINTEGER | pBOOLEAN | pIF | pLET | pZERO | pTIMES | pPLUS | pIDENTIFIER)
 
     result = pEXPR.parseString(input)[0]
+
     if type(result) == type(dict()):
         return result
     else:
