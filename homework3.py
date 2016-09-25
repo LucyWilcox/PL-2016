@@ -12,7 +12,7 @@ http://pyparsing.wikispaces.com/share/view/66929500 <- realized we could pass a 
 
 """
 import sys
-from pyparsing import Word, Literal,  Keyword, Forward, alphas, alphanums, OneOrMore
+from pyparsing import Word, Literal,  Keyword, Forward, alphas, alphanums, OneOrMore, ZeroOrMore
 
 
 #
@@ -231,7 +231,6 @@ def oper_minus (v1,v2):
     raise Exception ("Runtime error: trying to subtract non-numbers")
 
 def oper_times (v1,v2):
-    print "came to multiply*************"
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value * v2.value)
     raise Exception ("Runtime error: trying to multiply non-numbers")
@@ -492,8 +491,8 @@ def parse_natural(input):
     pIF = Keyword("if") + pEXPR + ":" + pEXPR + pEXPR
     pIF.setParseAction(lambda result: EIf(result[1],result[3],result[4]))
 
-    pBINDING = "(" + pNAME + "=" + pEXPR + ")"
-    pBINDING.setParseAction(lambda result: (result[1],result[3]))
+    pBINDING = pNAME + "=" + pEXPR + ZeroOrMore(",")
+    pBINDING.setParseAction(lambda result: (result[0],result[2]))
 
     pLET = Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR
     pLET.setParseAction(lambda result: ELet(result[2:-2], result[-1]))
@@ -519,7 +518,6 @@ def parse_natural(input):
     pEXPR << (pBOOLEAN | pIF | pLET | pZERO | pSQUARE | pPLUS | pTIMES | pMINUS | pINTEGER | pIDENTIFIER | pUSERDEF)
 
     result = pEXPR.parseString(input)[0]
-    print "RES", result
 
     if type(result) == type(dict()):
         return result
@@ -532,12 +530,10 @@ def shell_natural ():
 
     print "Homework 3 - Calc Language"
     while True:
-        inp = raw_input("calc> ")
+        inp = raw_input("calc/nat> ")
         if not inp:
             return
-        print inp, "PRE"
-        exp = parse_lucy(inp)
-        print "AFTE"
+        exp = parse_natural(inp)
         if exp["result"] == "expression":
             print "Abstract representation:", exp
             v = exp['expr'].eval(INITIAL_FUN_DICT)
@@ -545,7 +541,8 @@ def shell_natural ():
 
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
-# shell_natural()
-shell_lucy()
+shell_natural()
 
+#zero? 1
+#zero? 0 : 1 2
 
