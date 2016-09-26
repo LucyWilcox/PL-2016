@@ -488,8 +488,8 @@ def parse_natural(input):
     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(getDefunDict)
 
-    pIF = Keyword("if") + pEXPR + ":" + pEXPR + pEXPR
-    pIF.setParseAction(lambda result: EIf(result[1],result[3],result[4]))
+    pIF = "(" + Keyword("if") + pEXPR + ":" + pEXPR + pEXPR + ")"
+    pIF.setParseAction(lambda result: EIf(result[2],result[4],result[5]))
 
     pBINDING = pNAME + "=" + pEXPR + ZeroOrMore(",")
     pBINDING.setParseAction(lambda result: (result[0],result[2]))
@@ -543,6 +543,11 @@ def shell_natural ():
 sys.setrecursionlimit(10000)
 shell_natural()
 
+#let (x = 10) (x + 1)
 #zero? 1
-#zero? 0 : 1 2
+#zero? (10-10)
+#(if zero? 0 : 1 2)
+#((if zero? 0 : 1 2) + 55)
+#((if zero? 1 : 1 2) + 55)
+#
 
