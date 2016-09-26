@@ -2,9 +2,13 @@
 # HOMEWORK 3
 #
 # Team members:
-#
+Lucy Wilcox
+Xiaofan Wu
+
 # Emails:
-#
+lucy.wilcox@students.olin.edu
+xiaozheng.xu@students.olin.edu
+
 # Remarks:
 We used the pyparsing docs
 http://pyparsing.wikispaces.com/share/view/66929500 <- realized we could pass a function into setParseAction
@@ -274,180 +278,7 @@ INITIAL_FUN_DICT = {
 # cf http://pyparsing.wikispaces.com/
 
 
-# def parse (input):
-#     # parse a string into an element of the abstract representation
-
-#     # Grammar:
-#     #
-#     # <expr> ::= <integer>
-#     #            true
-#     #            false
-#     #            <identifier>
-#     #            ( if <expr> <expr> <expr> )
-#     #            ( let ( ( <name> <expr> ) ) <expr )
-#     #            ( + <expr> <expr> )
-#     #            ( * <expr> <expr> )
-#     #
-#     def getDefunDict(result):
-#         name = result[2]
-#         params = result[4:-3]
-#         body = result[-2]
-#         newFun = {name: {"params": params, "body": body}}
-#         INITIAL_FUN_DICT.update(newFun)
-#         return {"result":"function", "name": name, "params": params, "body": body}
-
-#     idChars = alphas+"_+*-?!=<>"
-
-#     pIDENTIFIER = Word(idChars, idChars+"0123456789")
-#     pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
-
-#     # A name is like an identifier but it does not return an EId...
-#     pNAME = Word(idChars,idChars+"0123456789")
-
-#     pINTEGER = Word("-0123456789","0123456789")
-#     pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
-
-#     pBOOLEAN = Keyword("true") | Keyword("false")
-#     pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
-
-#     pEXPR = Forward()
-
-#     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-#     pDEFUN.setParseAction(getDefunDict)
-
-#     pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
-#     pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
-
-#     pBINDING = "(" + pNAME + pEXPR + ")"
-#     pBINDING.setParseAction(lambda result: (result[1],result[2]))
-
-#     pLET = "(" + Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
-#     pLET.setParseAction(lambda result: ELet([result[i] for i in range(3, len(result) - 3)], result[-2]))
-
-#     pPLUS = "(" + Keyword("+") + pEXPR + pEXPR + ")"
-#     pPLUS.setParseAction(lambda result: ECall("+",[result[2],result[3]]))
-
-#     pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
-#     pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
-
-#     pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
-#     pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
-
-#     pEXPR << (pINTEGER | pDEFUN | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
-
-#     result = pEXPR.parseString(input)[0]
-
-#     if type(result) == type(dict()):
-#         return result
-#     else:
-#         return {"result":"expression", "expr": result}
-
-# def shell ():
-#     # A simple shell
-#     # Repeatedly read a line of input, parse it, and evaluate the result
-
-#     print "Homework 3 - Calc Language"
-#     while True:
-#         inp = raw_input("calc> ")
-#         if not inp:
-#             return
-#         exp = parse(inp)
-#         if exp["result"] == "expression":
-#             print "Abstract representation:", exp
-#             v = exp['expr'].eval(INITIAL_FUN_DICT)
-#             print v
-
-# def parse_natural (input):
-#     # parse a string into an element of the abstract representation
-
-#     # Grammar:
-#     #
-#     # <expr> ::= <integer>
-#     #            true
-#     #            false
-#     #            <identifier>
-#     #            ( if <expr> <expr> <expr> )
-#     #            ( let ( ( <name> <expr> ) ) <expr )
-#     #            ( + <expr> <expr> )
-#     #            ( * <expr> <expr> )
-#     #
-#     def getDefunDict(result):
-#         name = result[2]
-#         params = result[4:-3]
-#         body = result[-2]
-#         newFun = {name: {"params": params, "body": body}}
-#         INITIAL_FUN_DICT.update(newFun)
-#         return {"result":"function", "name": name, "params": params, "body": body}
-
-#     idChars = alphas+"_+*-?!=<>"
-
-#     pIDENTIFIER = Word(idChars, idChars+"0123456789")
-#     pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
-#     print input, "&&"
-#     # A name is like an identifier but it does not return an EId...
-#     pNAME = Word(idChars,idChars+"0123456789")
-
-#     pINTEGER = Word("-0123456789","0123456789")
-#     pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
-
-#     pBOOLEAN = Keyword("true") | Keyword("false")
-#     pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
-
-#     pEXPR = Forward()
-
-#     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-#     pDEFUN.setParseAction(getDefunDict)
-
-#     pIF = pEXPR + Keyword("?")  + pEXPR + ":" + pEXPR 
-#     pIF.setParseAction(lambda result: EIf(result[0],result[2],result[3]))
-
-#     pBINDING = pNAME + "=" + pEXPR
-#     pBINDING.setParseAction(lambda result: (result[0],result[2]))
-
-#     pLET = Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR
-#     pLET.setParseAction(lambda result: ELet([result[i] for i in range(2, len(result) - 2)], result[-1]))
-
-#     pPLUS = pEXPR + Keyword("+") + pEXPR 
-#     pPLUS.setParseAction(lambda result: ECall("+",[result[0],result[2]]))
-
-#     pTIMES = "(" + pEXPR + Keyword("*") + pEXPR + ")"
-#     pTIMES.setParseAction(lambda result: ECall("*",[result[0],result[2]]))
-
-#     pZERO = Keyword("zero?") + "(" + pEXPR + ")"
-#     pZERO.setParseAction(lambda result: ECall("zero?",[result[2]]))
-
-#     pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
-#     pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
-
-#     pEXPR << (pIF | pLET | pZERO | pTIMES | pPLUS | pIDENTIFIER | pINTEGER | pBOOLEAN)
-
-#     result = pEXPR.parseString(input)[0]
-#     print result, "RR"
-
-#     if type(result) == type(dict()):
-#         return result
-#     else:
-#         return {"result":"expression", "expr": result}
-
-# def shell_natural ():
-#     # A simple shell
-#     # Repeatedly read a line of input, parse it, and evaluate the result
-
-#     print "Homework 3 - Calc Language"
-#     while True:
-#         inp = raw_input("calc> ")
-#         print inp, "*******inp"
-#         if not inp:
-#             return
-#         exp = parse_natural(inp)
-#         if exp["result"] == "expression":
-#             print "Abstract representation:", exp
-#             print exp['expr']
-#             v = exp['expr'].eval(INITIAL_FUN_DICT)
-#             print v
-
-
-def parse_natural(input):
+def parse (input):
     # parse a string into an element of the abstract representation
 
     # Grammar:
@@ -467,7 +298,85 @@ def parse_natural(input):
         body = result[-2]
         newFun = {name: {"params": params, "body": body}}
         INITIAL_FUN_DICT.update(newFun)
+        print "Function " + name + " added to the function dictionary"
         return {"result":"function", "name": name, "params": params, "body": body}
+
+    idChars = alphas+"_+*-?!=<>"
+
+    pIDENTIFIER = Word(idChars, idChars+"0123456789")
+    pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
+
+    # A name is like an identifier but it does not return an EId...
+    pNAME = Word(idChars,idChars+"0123456789")
+
+    pINTEGER = Word("-0123456789","0123456789")
+    pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
+
+    pBOOLEAN = Keyword("true") | Keyword("false")
+    pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
+
+    pEXPR = Forward()
+
+    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pDEFUN.setParseAction(getDefunDict)
+
+    pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
+    pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
+
+    pBINDING = "(" + pNAME + pEXPR + ")"
+    pBINDING.setParseAction(lambda result: (result[1],result[2]))
+
+    pLET = "(" + Keyword("let") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
+    pLET.setParseAction(lambda result: ELet(result[3:-3], result[-2]))
+
+    pPLUS = "(" + Keyword("+") + pEXPR + pEXPR + ")"
+    pPLUS.setParseAction(lambda result: ECall("+",[result[2],result[3]]))
+
+    pTIMES = "(" + Keyword("*") + pEXPR + pEXPR + ")"
+    pTIMES.setParseAction(lambda result: ECall("*",[result[2],result[3]]))
+
+    pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
+    pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
+
+    pEXPR << (pINTEGER | pDEFUN | pBOOLEAN | pIDENTIFIER | pIF | pLET | pPLUS | pTIMES | pUSERDEF)
+
+    result = pEXPR.parseString(input)[0]
+
+    if type(result) == type(dict()):
+        return result
+    else:
+        return {"result":"expression", "expr": result}
+
+def shell ():
+    # A simple shell
+    # Repeatedly read a line of input, parse it, and evaluate the result
+
+    print "Homework 3 - Calc Language"
+    while True:
+        inp = raw_input("calc> ")
+        if not inp:
+            return
+        exp = parse(inp)
+        if exp["result"] == "expression":
+            print "Abstract representation:", exp["expr"]
+            v = exp['expr'].eval(INITIAL_FUN_DICT)
+            print v
+
+
+def parse_natural(input):
+    # parse a string into an element of the abstract representation
+
+    # Grammar:
+    #
+    # <expr> ::= <integer>
+    #            true
+    #            false
+    #            <identifier>
+    #            ( if <expr> <expr> <expr> )
+    #            ( let ( ( <name> <expr> ) ) <expr )
+    #            ( + <expr> <expr> )
+    #            ( * <expr> <expr> )
+    #
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -485,10 +394,7 @@ def parse_natural(input):
 
     pEXPR = Forward()
 
-    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-    pDEFUN.setParseAction(getDefunDict)
-
-    pIF = "(" + Keyword("if") + pEXPR + ":" + pEXPR + pEXPR + ")"
+    pIF = "(" + Keyword("if") + pEXPR + ":" + pEXPR + "," + pEXPR + ")"
     pIF.setParseAction(lambda result: EIf(result[2],result[4],result[5]))
 
     pBINDING = pNAME + "=" + pEXPR + ZeroOrMore(",")
@@ -512,10 +418,7 @@ def parse_natural(input):
     pMINUS = "(" + pEXPR + Keyword("-") + pEXPR + ")"
     pMINUS.setParseAction(lambda result: ECall("-",[result[1],result[3]]))
 
-    pUSERDEF = "(" + pNAME + OneOrMore(pEXPR) + ")"
-    pUSERDEF.setParseAction(lambda result: ECall(result[1], result[2:-1]))
-
-    pEXPR << (pBOOLEAN | pIF | pLET | pZERO | pSQUARE | pPLUS | pTIMES | pMINUS | pINTEGER | pIDENTIFIER | pUSERDEF)
+    pEXPR << (pBOOLEAN | pIF | pLET | pZERO | pSQUARE | pPLUS | pTIMES | pMINUS | pINTEGER | pIDENTIFIER)
 
     result = pEXPR.parseString(input)[0]
 
@@ -542,12 +445,27 @@ def shell_natural ():
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
 shell_natural()
+# shell() # run for old shell
+
+"""
+The following is our working syntax for 3a exapmle inputs/outputs.
+"""
 
 #let (x = 10) (x + 1)
 #zero? 1
-#zero? (10-10)
-#(if zero? 0 : 1 2)
-#((if zero? 0 : 1 2) + 55)
-#((if zero? 1 : 1 2) + 55)
-#
+#zero? (10 - 10)
+#(if zero? 0 : 1, 2)
+#((if zero? 0 : 1, 2) + 55)
+#((if zero? 1 : 1, 2) + 55)
+#let (x = (4 + (5 * 6))) let (y = (x * 2)) square y
+#((34 * 2) * (34 *2))
 
+"""
+Our code kept crashing when we tried to do something like define
+pPLUS = pEXPR + Keyword("+") + pEXPR, so without the "(" and this would give
+us errors. We're not sure exactly what is going on and tried to see if was an
+issue with the order but could find a solution.
+
+So expressions 5 + 5 is (5 + 5). If also requires () around it. We felt 
+saying "if something : true-exp, false-exp" made sense syntactically. 
+"""
