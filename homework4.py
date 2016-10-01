@@ -83,7 +83,9 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,fun_dict):
+
         vs = [ e.eval(fun_dict) for e in self._exps ]
+        print vs,"in eprimcall"
         return apply(self._prim,vs)
 
     def substitute (self,id,new_e):
@@ -200,18 +202,9 @@ class ECall (Exp):
     def evalEnv(self,fun_dict,env):
         params = fun_dict[self._name]["params"]
         body = fun_dict[self._name]["body"]
-        # vs = [ e.eval(fun_dict) for e in self._exps ]
-        # while notFound:
-        #     eachPair=env.pop()
-        # for (val,p) in zip(vs,params):
-
-        # eachValue = env.pop()
         vs = [ e.__str__() for e in self._exps ]
-        print vs,"Vs"
-        print env,"env"
 
         for i in range(len(self._exps)):
-            print i,"time in the loop"
             notFound = True
             while notFound:
                 eachPair = env.pop()
@@ -219,21 +212,10 @@ class ECall (Exp):
                     self._exps[i]=eachPair[1]
                     notFound = False
                     
-                    
-        print self._exps,"values"
 
         for (val,p) in zip(self._exps,params):
-            print p,val
-            # x EValue(5)
-            # y EValue(20)    
             body = body.substitute(p,val)
         return body.eval(fun_dict)
-
-        print params,"params"
-        print body,"body"
-        print env
-        print "&&&&&&&",self._name
-        print "**********",self._exps
 
     def substitute (self,var,new_e):
         new_es = [ e.substitute(var,new_e) for e in self._exps]
@@ -278,6 +260,7 @@ def oper_plus (v1,v2):
     raise Exception ("Runtime error: trying to add non-numbers")
 
 def oper_minus (v1,v2):
+    print v1,v2
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value - v2.value)
     raise Exception ("Runtime error: trying to subtract non-numbers")
@@ -321,7 +304,7 @@ INITIAL_FUN_DICT = {
 
 env=[]
 
-ELet([("a",EInteger(5)),
+print ELet([("a",EInteger(5)),
           ("b",EInteger(20))],
               ECall("-",[EId("a"),EId("b")])).evalEnv(INITIAL_FUN_DICT,env).value
 
