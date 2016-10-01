@@ -318,11 +318,15 @@ def parse (input):
     def letstar_helper(result):
         bindings = result[3]
         for i, b in enumerate(bindings):
-            for b2 in bindings[i:]
-                new_b2 = ELet(b, b2) #need to update original bindings with this
+            for i2, b2 in enumerate(bindings[i:]):
+                index = i + i2
+                new_b = ELet(b, b2).eval() #need to update original bindings with this
+                bindings[index] = new_b
+
 
             # call elet for each binding on all following bindings
-        # ELet(result[3],result[5])
+        print "bindings", bindings
+        return ELet(bindings,result[5])
 
     idChars = alphas+"_+*-?!=<>"
 
