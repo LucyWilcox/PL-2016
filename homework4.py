@@ -315,6 +315,15 @@ def parse (input):
             first.append(")")
             return or_helper(first)
 
+    def letstar_helper(result):
+        bindings = result[3]
+        for i, b in enumerate(bindings):
+            for b2 in bindings[i:]
+                new_b2 = ELet(b, b2) #need to update original bindings with this
+
+            # call elet for each binding on all following bindings
+        # ELet(result[3],result[5])
+
     idChars = alphas+"_+*-?!=<>"
 
     pIDENTIFIER = Word(idChars, idChars+"0123456789")
@@ -352,13 +361,16 @@ def parse (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(lambda result: ELet(result[3],result[5]))
 
+    pLETSTAR = "(" + Keyword("let*") + "(" + pBINDINGS + ")" + pEXPR + ")"
+    pLETSTAR.setParseAction(letstar_helper)
+
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
 
     pCALL = "(" + pNAME + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
