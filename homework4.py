@@ -287,7 +287,33 @@ def parse (input):
     #            ( let ( ( <name> <expr> ) ) <expr> )
     #            ( <name> <expr> ... )
     #
+    def and_helper(result):
+        if len(result) == 3:
+            return EBoolean(True)
+        elif len(result) == 4:
+            return result[2]
+        elif len(result) == 5:
+            return EIf(result[2], result[3], EBoolean(False))
+        else:
+            first = result[:-3]
+            last = EIf(result[-3], result[-2], EBoolean(False))
+            first.append(last)
+            first.append(")")
+            return and_helper(first)
 
+    def or_helper(result):
+        if len(result) == 3:
+            return EBoolean(True)
+        elif len(result) == 4:
+            return result[2]
+        elif len(result) == 5:
+            return EIf(result[2], EBoolean(True), result[3])
+        else:
+            first = result[:-3]
+            last = EIf(result[-3], EBoolean(True), result[-2])
+            first.append(last)
+            first.append(")")
+            return or_helper(first)
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -311,14 +337,11 @@ def parse (input):
     pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
     pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
 
-    pANDZero = "(" + Keyword("and") + ")"
-    pANDZero.setParseAction(lambda result: EBoolean(True))
+    pAND = "(" + Keyword("and") + ZeroOrMore(pEXPR) + ")"
+    pAND.setParseAction(and_helper)
 
-    pANDOne = "(" + Keyword("and") + pEXPR + ")"
-    pANDOne.setParseAction(lambda result: EBoolean(result[2]))
-
-    pANDTwo = "(" + Keyword("and") + pEXPR + pEXPR + ")"
-    pANDTwo.setParseAction(lambda result: EIf(result[2], ))
+    pOR = "(" + Keyword("or") + ZeroOrMore(pEXPR) + ")"
+    pOR.setParseAction(or_helper)
 
     pBINDING = "(" + pNAME + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[2]))
@@ -335,7 +358,7 @@ def parse (input):
     pCALL = "(" + pNAME + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pANDZero | pANDOne | pLET | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
