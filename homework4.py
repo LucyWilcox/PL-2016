@@ -146,8 +146,6 @@ class ELet (Exp):
             # new_e2 = new_e2.substitute(id,EValue(v))
         return new_e2.evalEnv(fun_dict,env)
 
-
-
     def substitute (self,id,new_e):
         new_bindings = [ (bid,be.substitute(id,new_e)) for (bid,be) in self._bindings]
         if id in [ bid for (bid,_) in self._bindings]:
@@ -328,21 +326,39 @@ def parse (input):
 
     def letstar_helper(result):
         bindings = result[3]
-        #(x 10)(y 10)(m 10)
+        #(x 10)(y x)(m y)
         for i, b in enumerate(bindings):
             #i = 1
-            for i2, b2 in enumerate(bindings[i:]):
+            for i2, b2 in enumerate(bindings[i+1:]):
+                print i, i2
                 # i2 = 1
                 index = i + i2 #2
-                print "BBB", b, "BBB222", b2
-                new_b = ELet([b], b2[1]).eval(INITIAL_FUN_DICT) #need to update original bindings with this
-                print new_b
-                bindings[index] = new_b
+                print b2[1], b2[1], b[0], "MATCH"
+                if b2[1] == b[0]:
+                    b2[1] = b[1]
+                    print "B2", b2
+                    bindings[index] = b2
+
+                # print "BBB", b, "BBB222", b2
+                # new_b = ELet([b], b2[1]).eval(INITIAL_FUN_DICT) #need to update original bindings with this
+                # print new_b
+                # bindings[index] = (b2[0], new_b)
 
 
             # call elet for each binding on all following bindings
         print "bindings", bindings
         return ELet(bindings, result[5])
+
+        # new_binds = []
+        # for (b1, b2) in self._bindings:
+        #     for nb in new_binds:
+        #         #going down to get what b2 should really be before adding
+        #         b2 = b2.substitute(nb[0], nb[1])
+        #     new_binds.append((b1, b2))
+
+        # if id in [x[0] for x in self._bindings]:
+        #     return ELet(new_binds, self._exp)
+        # return ELet(new_binds, self._exp.substitute(id, new_e))
 
     idChars = alphas+"_+*-?!=<>"
 
