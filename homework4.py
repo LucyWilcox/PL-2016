@@ -136,6 +136,17 @@ class ELet (Exp):
             v = e.eval(fun_dict)
             new_e2 = new_e2.substitute(id,EValue(v))
         return new_e2.eval(fun_dict)
+        
+    def evalEnv(self,fun_dict,env):
+        new_e2 = self._e2
+        for (id,e) in self._bindings:
+            #remember e 
+            v = e.eval(fun_dict)
+            env.append((id,EValue(v)))
+            # new_e2 = new_e2.substitute(id,EValue(v))
+        return new_e2.evalEnv(fun_dict,env)
+
+
 
     def substitute (self,id,new_e):
         new_bindings = [ (bid,be.substitute(id,new_e)) for (bid,be) in self._bindings]
