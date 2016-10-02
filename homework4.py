@@ -33,7 +33,7 @@ class EValue (Exp):
     def eval (self,fun_dict):
         return self._value
 
-    def eval (self,fun_dict, env):
+    def evalEnv(self,fun_dict, env):
         return self._value
 
     def substitute (self,id,new_e):
@@ -128,7 +128,6 @@ class EIf (Exp):
             return self._else.eval(fun_dict)
 
     def evalEnv (self,fun_dict, env):
-        print "came to EIF******************&&&&&&&&&&&&&&&&&&&&&&&&&"
         v = self._cond.evalEnv(fun_dict, env)
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
@@ -224,7 +223,6 @@ class ECall (Exp):
         return body.eval(fun_dict)
 
     def evalEnv(self,fun_dict,env):
-        print "came to ECALL************"
         params = fun_dict[self._name]["params"]
         body = fun_dict[self._name]["body"]
         vs = [ e.__str__() for e in self._exps ]
@@ -386,19 +384,10 @@ def parse (input):
             return or_helper(first)
 
     def recurse_condition(result):
-        print result,"test********************************************************"
-        print len(result),"*******length of result"
-        print result[0][0]
-        print result[0]
         if len(result) == 1:
-
             return EIf(result[0][0],result[0][1],EBoolean(False))
-        #if the first condition is true, then return else recurse the next part 
         else:
             return EIf(result[0][0],result[0][1],recurse_condition(result[1:]))
-
-    def test_rec(result):
-        print result, "in test ree&&&&&&&&"
 
     def letstar_helper(result):
         if len(result) == 7:
@@ -462,7 +451,7 @@ def parse (input):
     pCALL = "(" + pNAME + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCOND)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCOND | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
@@ -498,7 +487,7 @@ def shell ():
             exp = result["expr"]
             print "Abstract representation:", exp
             env = []
-            v = exp.evalEnv(fun_dict, env)
+            v = exp.eval(fun_dict)
             print v
         elif result["result"] == "function":
             # a result is already of the right form to put in the
