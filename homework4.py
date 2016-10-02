@@ -371,9 +371,9 @@ def parse (input):
 
     def recurse_condition(result):
         print result,"test********************************************************"
-        print result[1],"***************************"
+        print result[2][0],"***************************"
         #if the first condition is true, then return else recurse the next part 
-        return EIf(result[1],result[2],recurse_condition(result[3]))
+        return EIf(result[2][0],result[2][1],recurse_condition(result[2][2]))
 
     def test_rec(result):
         print result, "in test ree&&&&&&&&"
@@ -424,11 +424,15 @@ def parse (input):
     pLETSTAR = "(" + Keyword("let*") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
     pLETSTAR.setParseAction(lambda result: letstar_helper(result))
 
-    pCONDITIONS = "(" + pEXPR + pINTEGER + ")"
-    pCONDITIONS.setParseAction(recurse_condition)
+    pCONDITION = "(" + pEXPR + pINTEGER + ")"
+    pCONDITION.setParseAction(lambda result: (result[1],result[2]))
 
-    pCOND = "(" + Keyword("cond") + OneOrMore(pCONDITIONS) + ")"
-    pCOND.setParseAction(test_rec)
+    pCONDITIONS = OneOrMore(pCONDITION)
+    pCONDITIONS.setParseAction(lambda result:[result])
+
+    pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
+    # pCOND.setParseAction(recurse_condition)
+    pCOND.setParseAction(lambda result: EIf(result[2]))
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
