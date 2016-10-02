@@ -87,7 +87,7 @@ class EPrimCall (Exp):
     def eval (self,fun_dict):
 
         vs = [ e.eval(fun_dict) for e in self._exps ]
-        print vs,"in eprimcall"
+        # print vs,"in eprimcall"
         return apply(self._prim,vs)
 
     def substitute (self,id,new_e):
@@ -137,10 +137,10 @@ class ELet (Exp):
         # by this point, all substitutions in bindings expressions have happened already (!)
         new_e2 = self._e2
         for (id,e) in self._bindings:
-            print id,e
+            # print id,e
             v = e.eval(fun_dict)
             new_e2 = new_e2.substitute(id,EValue(v))
-            print new_e2,"newe2"
+            # print new_e2,"newe2"
         return new_e2.eval(fun_dict)
         
     def evalEnv(self,fun_dict,env):
@@ -202,7 +202,6 @@ class ECall (Exp):
         if len(params) != len(vs):
             raise Exception("Runtime error: wrong number of argument calling function {}".format(self._name))
         for (val,p) in zip(vs,params):
-            print p,EValue(val)   
             body = body.substitute(p,EValue(val))
         return body.eval(fun_dict)
     def evalEnv(self,fun_dict,env):
@@ -272,7 +271,6 @@ def oper_plus (v1,v2):
     raise Exception ("Runtime error: trying to add non-numbers")
 
 def oper_minus (v1,v2):
-    print v1,v2
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value - v2.value)
     raise Exception ("Runtime error: trying to subtract non-numbers")
@@ -381,39 +379,10 @@ def parse (input):
         print result, "in test ree&&&&&&&&"
 
     def letstar_helper(result):
-        bindings = result[3]
-        for i, b in enumerate(bindings):
-            #i = 1
-            for i2, b2 in enumerate(bindings[i+1:]):
-                print i, i2
-                # i2 = 1
-                index = i + i2 #2
-                print b2[1], b2[1], b[0], "MATCH"
-                if b2[1] == b[0]:
-                    b2[1] = b[1]
-                    print "B2", b2
-                    bindings[index] = b2
-
-                # print "BBB", b, "BBB222", b2
-                # new_b = ELet([b], b2[1]).eval(INITIAL_FUN_DICT) #need to update original bindings with this
-                # print new_b
-                # bindings[index] = (b2[0], new_b)
-
-
-            # call elet for each binding on all following bindings
-        print "bindings", bindings
-        return ELet(bindings, result[5])
-
-        # new_binds = []
-        # for (b1, b2) in self._bindings:
-        #     for nb in new_binds:
-        #         #going down to get what b2 should really be before adding
-        #         b2 = b2.substitute(nb[0], nb[1])
-        #     new_binds.append((b1, b2))
-
-        # if id in [x[0] for x in self._bindings]:
-        #     return ELet(new_binds, self._exp)
-        # return ELet(new_binds, self._exp.substitute(id, new_e))
+        if len(result) == 7:
+            return ELet([result[3]], result[5])
+        else:
+            return ELet([result[3]], letstar_helper(result[:3] + result[4:]))
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -452,12 +421,11 @@ def parse (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(lambda result: ELet(result[3],result[5]))
 
-    pLETSTAR = "(" + Keyword("let*") + "(" + pBINDINGS + ")" + pEXPR + ")"
-    pLETSTAR.setParseAction(letstar_helper)
+    pLETSTAR = "(" + Keyword("let*") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
+    pLETSTAR.setParseAction(lambda result: letstar_helper(result))
 
     pCONDITIONS = "(" + pEXPR + pINTEGER + ")"
     pCONDITIONS.setParseAction(recurse_condition)
-
 
     pCOND = "(" + Keyword("cond") + OneOrMore(pCONDITIONS) + ")"
     pCOND.setParseAction(test_rec)
