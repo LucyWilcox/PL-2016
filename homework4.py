@@ -33,6 +33,9 @@ class EValue (Exp):
     def eval (self,fun_dict):
         return self._value
 
+    def eval (self,fun_dict, env):
+        return self._value
+
     def substitute (self,id,new_e):
         return self
 
@@ -48,6 +51,7 @@ class EInteger (Exp):
 
     def eval (self,fun_dict):
         return VInteger(self._integer)
+
     def evalEnv (self,fun_dict,env):
         return VInteger(self._integer)
 
@@ -65,6 +69,9 @@ class EBoolean (Exp):
         return "EBoolean({})".format(self._boolean)
 
     def eval (self,fun_dict):
+        return VBoolean(self._boolean)
+
+    def evalEnv (self,fun_dict, env):
         return VBoolean(self._boolean)
 
     def substitute (self,id,new_e):
@@ -90,6 +97,12 @@ class EPrimCall (Exp):
         # print vs,"in eprimcall"
         return apply(self._prim,vs)
 
+    def evalEnv (self,fun_dict, env):
+        vs = [ e.evalEnv(fun_dict, env) for e in self._exps ]
+        # print vs,"in eprimcall"
+        return apply(self._prim,vs)
+
+
     def substitute (self,id,new_e):
         new_es = [ e.substitute(id,new_e) for e in self._exps]
         return EPrimCall(self._prim,new_es)
@@ -114,6 +127,15 @@ class EIf (Exp):
             return self._then.eval(fun_dict)
         else:
             return self._else.eval(fun_dict)
+
+    def evalEnv (self,fun_dict, env):
+        v = self._cond.evalEnv(fun_dict, env)
+        if v.type != "boolean":
+            raise Exception ("Runtime error: condition not a Boolean")
+        if v.value:
+            return self._then.evalEnv(fun_dict, env)
+        else:
+            return self._else.evalEnv(fun_dict, env)
 
     def substitute (self,id,new_e):
         return EIf(self._cond.substitute(id,new_e),
@@ -179,6 +201,9 @@ class EId (Exp):
     def eval (self,fun_dict):
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
 
+    def evalEnv (self,fun_dict, env):
+        raise Exception("Runtime error: unknown identifier {}".format(self._id))
+
     def substitute (self,id,new_e):
         if id == self._id:
             return new_e
@@ -204,6 +229,7 @@ class ECall (Exp):
         for (val,p) in zip(vs,params):
             body = body.substitute(p,EValue(val))
         return body.eval(fun_dict)
+
     def evalEnv(self,fun_dict,env):
         print "came to Ecall eval"
         params = fun_dict[self._name]["params"]
@@ -475,7 +501,8 @@ def shell ():
         if result["result"] == "expression":
             exp = result["expr"]
             print "Abstract representation:", exp
-            v = exp.eval(fun_dict)
+            env = []
+            v = exp.evalEnv(fun_dict, env)
             print v
         elif result["result"] == "function":
             # a result is already of the right form to put in the
