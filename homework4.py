@@ -128,7 +128,7 @@ class EIf (Exp):
             return self._else.eval(fun_dict)
 
     def evalEnv (self,fun_dict, env):
-        print "came to EIF******************"
+        print "came to EIF******************&&&&&&&&&&&&&&&&&&&&&&&&&"
         v = self._cond.evalEnv(fun_dict, env)
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
@@ -389,9 +389,9 @@ def parse (input):
         print result,"test********************************************************"
         print len(result),"*******length of result"
         print result[0][0]
-        print result[1],"result 1 **********************"
-
+        print result[0]
         if len(result) == 1:
+
             return EIf(result[0][0],result[0][1],EBoolean(False))
         #if the first condition is true, then return else recurse the next part 
         else:
