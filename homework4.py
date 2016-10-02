@@ -48,6 +48,8 @@ class EInteger (Exp):
 
     def eval (self,fun_dict):
         return VInteger(self._integer)
+    def evalEnv (self,fun_dict,env):
+        return VInteger(self._integer)
 
     def substitute (self,id,new_e):
         return self
@@ -83,7 +85,9 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,fun_dict):
+
         vs = [ e.eval(fun_dict) for e in self._exps ]
+        print vs,"in eprimcall"
         return apply(self._prim,vs)
 
     def substitute (self,id,new_e):
@@ -133,16 +137,26 @@ class ELet (Exp):
         # by this point, all substitutions in bindings expressions have happened already (!)
         new_e2 = self._e2
         for (id,e) in self._bindings:
+            print id,e
             v = e.eval(fun_dict)
             new_e2 = new_e2.substitute(id,EValue(v))
+            print new_e2,"newe2"
         return new_e2.eval(fun_dict)
         
     def evalEnv(self,fun_dict,env):
         new_e2 = self._e2
         for (id,e) in self._bindings:
             #remember e 
-            v = e.eval(fun_dict)
+            # print e.type
+            # print 
+            # if e.eval(fun_dict).type == "integer":
+            #     v = e.eval(fun_dict)
+            #     
+            # else:
+            #     print e,"in else"
+            v=e.evalEnv(fun_dict,env)
             env.append((id,EValue(v)))
+
             # new_e2 = new_e2.substitute(id,EValue(v))
         return new_e2.evalEnv(fun_dict,env)
 
@@ -188,13 +202,36 @@ class ECall (Exp):
         if len(params) != len(vs):
             raise Exception("Runtime error: wrong number of argument calling function {}".format(self._name))
         for (val,p) in zip(vs,params):
+            print p,EValue(val)   
             body = body.substitute(p,EValue(val))
+        return body.eval(fun_dict)
+    def evalEnv(self,fun_dict,env):
+        print "came to Ecall eval"
+        params = fun_dict[self._name]["params"]
+        body = fun_dict[self._name]["body"]
+        vs = [ e.__str__() for e in self._exps ]
+        print vs
+        print self._exps
+
+        for i in range(len(self._exps)):
+            notFound = True
+            while notFound:
+                eachPair = env.pop()
+                if EId(eachPair[0]).__str__() in vs:
+
+                    print self._exps[i],eachPair[1]
+                    self._exps[i]=eachPair[1]
+                    notFound = False
+            print self._exps
+                    
+
+        for (val,p) in zip(self._exps,params):
+            body = body.substitute(p,val)
         return body.eval(fun_dict)
 
     def substitute (self,var,new_e):
         new_es = [ e.substitute(var,new_e) for e in self._exps]
         return ECall(self._name,new_es)
-
 
     
 #
@@ -235,6 +272,7 @@ def oper_plus (v1,v2):
     raise Exception ("Runtime error: trying to add non-numbers")
 
 def oper_minus (v1,v2):
+    print v1,v2
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value - v2.value)
     raise Exception ("Runtime error: trying to subtract non-numbers")
@@ -276,10 +314,19 @@ INITIAL_FUN_DICT = {
 }
 
 
+# env=[]
 
-##
-## PARSER
-##
+# print ELet([("a",EInteger(5)),
+#           ("b",ECall("+",[EId("a"),EId("a")]))],
+#               ECall("-",[EId("a"),EId("b")])).evalEnv(INITIAL_FUN_DICT,env).value
+# print ELet([("a",EInteger(5)),
+#           ("b",EInteger(20))],
+#          ELet([("a",ECall("+",[EId("a"),EInteger(5)])),
+#                ("b",ECall("+",[EId("a"),EInteger(5)]))],
+#               ECall("+",[EId("a"),EId("b")]))).evalEnv(INITIAL_FUN_DICT,env).value
+# ##
+# PARSER
+#
 # cf http://pyparsing.wikispaces.com/
 
 
@@ -324,9 +371,17 @@ def parse (input):
             first.append(")")
             return or_helper(first)
 
+    def recurse_condition(result):
+        print result,"test********************************************************"
+        print result[1],"***************************"
+        #if the first condition is true, then return else recurse the next part 
+        return EIf(result[1],result[2],recurse_condition(result[3]))
+
+    def test_rec(result):
+        print result, "in test ree&&&&&&&&"
+
     def letstar_helper(result):
         bindings = result[3]
-        #(x 10)(y x)(m y)
         for i, b in enumerate(bindings):
             #i = 1
             for i2, b2 in enumerate(bindings[i+1:]):
@@ -400,13 +455,20 @@ def parse (input):
     pLETSTAR = "(" + Keyword("let*") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLETSTAR.setParseAction(letstar_helper)
 
+    pCONDITIONS = "(" + pEXPR + pINTEGER + ")"
+    pCONDITIONS.setParseAction(recurse_condition)
+
+
+    pCOND = "(" + Keyword("cond") + OneOrMore(pCONDITIONS) + ")"
+    pCOND.setParseAction(test_rec)
+
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
 
     pCALL = "(" + pNAME + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCOND | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
