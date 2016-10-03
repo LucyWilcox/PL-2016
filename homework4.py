@@ -94,12 +94,10 @@ class EPrimCall (Exp):
     def eval (self,fun_dict):
 
         vs = [ e.eval(fun_dict) for e in self._exps ]
-        # print vs,"in eprimcall"
         return apply(self._prim,vs)
     def evalEnv(self,fun_dict,env):
 
         vs = [ e.evalEnv(fun_dict,env) for e in self._exps ]
-        # print vs,"in eprimcall"
         return apply(self._prim,vs)
 
     def substitute (self,id,new_e):
@@ -158,23 +156,18 @@ class ELet (Exp):
         # by this point, all substitutions in bindings expressions have happened already (!)
         new_e2 = self._e2
         for (id,e) in self._bindings:
-            # print id,e
             v = e.eval(fun_dict)
             new_e2 = new_e2.substitute(id,EValue(v))
-            # print new_e2,"newe2"
         return new_e2.eval(fun_dict)
         
     def evalEnv(self,fun_dict,env):
         new_e2 = self._e2
         listOfBindings=[]
         for (id,e) in self._bindings:
-            print id,e
             v=e.evalEnv(fun_dict,env)
-            print v, "value in for let"
             env.append((id,EValue(v)))
         result = new_e2.evalEnv(fun_dict,env)
         env.pop()
-        print "came to pop"
         return result
 
     def substitute (self,id,new_e):
@@ -228,23 +221,17 @@ class ECall (Exp):
     def evalEnv(self,fun_dict,env):
         params = fun_dict[self._name]["params"]
         body = fun_dict[self._name]["body"]
-        print env,"stack&&&&&&&&&&"
         vs = [ e.__str__() for e in self._exps ]
 
-        print vs,"vs"
         for i in range(len(self._exps)):
 
-            print i,vs[i], "i********"
             #go backward to ensure lookup at the top of the stack
             j=len(env)-1
             if vs[i].startswith( 'EId' ):
                 found = False
                 while not found:
-                    print j
                     eachPair = env[j]
                     if vs[i]==EId(eachPair[0]).__str__():
-                        print EId(eachPair[0]).__str__(),vs[i],"found"
-                        print eachPair[1],self._exps[i], "value **********"
                         self._exps[i]=eachPair[1]
                         found = True
                         j = 0
@@ -339,25 +326,10 @@ INITIAL_FUN_DICT = {
 }
 
 
-# env=[]
-# print ELet([("a",EInteger(5)),
-#           ("b",EInteger(20))],
-#          ELet([("a",EId("b")),
-#                ("b",EId("a"))],
-#               ECall("-",[EId("a"),EId("b")]))).evalEnv(INITIAL_FUN_DICT,env).value
-# print ELet([("a",EInteger(5)),
-#           ("b",ECall("*",[EId("a"),EId("a")]))],
-#               ECall("-",[EId("a"),EId("b")])).evalEnv(INITIAL_FUN_DICT,env).value
-# print ELet([("a",EInteger(5)),
-#           ("b",EInteger(20))],
-#          ELet([("a",ECall("+",[EId("a"),EInteger(5)])),
-#                ("b",ECall("+",[EId("a"),EInteger(5)]))],
-#               ECall("+",[EId("a"),EId("b")]))).evalEnv(INITIAL_FUN_DICT,env).value
 # #
 # PARSER
 
 # cf http://pyparsing.wikispaces.com/
-# print ECall(+,[ELet([(x,EInteger(20))],ECall(*,[EId(x),EId(x)])),EInteger(10)]).evalEnv(INITIAL_FUN_DICT,env).value
 
 def parse (input):
     # parse a string into an element of the abstract representation
@@ -400,11 +372,13 @@ def parse (input):
             first.append(")")
             return or_helper(first)
 
-    def recurse_condition(result):
+    def condition_helper(result):
+        if len(result)== 0:
+            return EBoolean(False)
         if len(result) == 1:
             return EIf(result[0][0],result[0][1],EBoolean(False))
         else:
-            return EIf(result[0][0],result[0][1],recurse_condition(result[1:]))
+            return EIf(result[0][0],result[0][1],condition_helper(result[1:]))
 
     def letstar_helper(result):
         if len(result) == 7:
@@ -460,7 +434,7 @@ def parse (input):
 
     pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
     # pCOND.setParseAction(recurse_condition)
-    pCOND.setParseAction(lambda result: recurse_condition(result[2]))
+    pCOND.setParseAction(lambda result: condition_helper(result[2]))
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
