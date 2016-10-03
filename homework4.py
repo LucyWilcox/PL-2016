@@ -1,13 +1,18 @@
+"""
 ############################################################
 # HOMEWORK 4
 #
 # Team members:
-#
-# Emails:
-#
-# Remarks:
-#
+Lucy Wilcox
+Xiaofan Wu
 
+# Emails:
+lucy.wilcox@students.olin.edu
+wuxiaofan1996@gmail.com
+
+# Remarks:
+Recursion is hard, Riccardo is cool and helpful.
+"""
 
 import sys
 from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums
@@ -162,12 +167,13 @@ class ELet (Exp):
         
     def evalEnv(self,fun_dict,env):
         new_e2 = self._e2
-        listOfBindings=[]
+        old_env = env
         for (id,e) in self._bindings:
             v=e.evalEnv(fun_dict,env)
             env.append((id,EValue(v)))
+            new_e2 = new_e2.substitute(id,EValue(v))
+        env = old_env
         result = new_e2.evalEnv(fun_dict,env)
-        env.pop()
         return result
 
     def substitute (self,id,new_e):
@@ -433,7 +439,6 @@ def parse (input):
     pCONDITIONS.setParseAction(lambda result:[result])
 
     pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
-    # pCOND.setParseAction(recurse_condition)
     pCOND.setParseAction(lambda result: condition_helper(result[2]))
 
     pEXPRS = ZeroOrMore(pEXPR)
@@ -459,7 +464,6 @@ def parse (input):
     result = pTOP.parseString(input)[0]
     return result    # the first element of the result is the expression
 
-
 def shell ():
     # A simple shell
     # Repeatedly read a line of input, parse it, and evaluate the result
@@ -471,6 +475,31 @@ def shell ():
     
     while True:
         inp = raw_input("calc> ")
+        if not inp:
+            return
+        result = parse(inp)
+        if result["result"] == "expression":
+            exp = result["expr"]
+            print "Abstract representation:", exp
+            v = exp.eval(fun_dict)
+            print v
+        elif result["result"] == "function":
+            # a result is already of the right form to put in the
+            # functions dictionary
+            fun_dict[result["name"]] = result
+            print "Function {} added to functions dictionary".format(result["name"])
+
+def shell_env ():
+    # A simple shell
+    # Repeatedly read a line of input, parse it, and evaluate the result
+
+    print "Homework 4 - Calc Language"
+
+    # work on a copy because we'll be adding to it
+    fun_dict = INITIAL_FUN_DICT.copy()
+    
+    while True:
+        inp = raw_input("calc_env> ")
         if not inp:
             return
         result = parse(inp)
@@ -489,5 +518,4 @@ def shell ():
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
 
-
-shell()
+shell_env()
