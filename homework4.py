@@ -174,6 +174,7 @@ class ELet (Exp):
             env.append((id,EValue(v)))
         result = new_e2.evalEnv(fun_dict,env)
         env.pop()
+        print "came to pop"
         return result
 
     def substitute (self,id,new_e):
@@ -227,18 +228,28 @@ class ECall (Exp):
     def evalEnv(self,fun_dict,env):
         params = fun_dict[self._name]["params"]
         body = fun_dict[self._name]["body"]
+        print env,"stack&&&&&&&&&&"
         vs = [ e.__str__() for e in self._exps ]
+
+        print vs,"vs"
         for i in range(len(self._exps)):
-            j=0
-            found = False
-            while not found:
-                eachPair = env[j]
-                if vs[i]==EId(eachPair[0]).__str__():
-                    print EId(eachPair[0]).__str__(),vs[i]
-                    self._exps[i]=eachPair[1]
-                    found = True
-                else:
-                    j+=1
+
+            print i,vs[i], "i********"
+            #go backward to ensure lookup at the top of the stack
+            j=len(env)-1
+            if vs[i].startswith( 'EId' ):
+                found = False
+                while not found:
+                    print j
+                    eachPair = env[j]
+                    if vs[i]==EId(eachPair[0]).__str__():
+                        print EId(eachPair[0]).__str__(),vs[i],"found"
+                        print eachPair[1],self._exps[i], "value **********"
+                        self._exps[i]=eachPair[1]
+                        found = True
+                        j = 0
+                    else:
+                        j-=1
 
         for (val,p) in zip(self._exps,params):
             body = body.substitute(p,val)
@@ -329,7 +340,11 @@ INITIAL_FUN_DICT = {
 
 
 # env=[]
-
+# print ELet([("a",EInteger(5)),
+#           ("b",EInteger(20))],
+#          ELet([("a",EId("b")),
+#                ("b",EId("a"))],
+#               ECall("-",[EId("a"),EId("b")]))).evalEnv(INITIAL_FUN_DICT,env).value
 # print ELet([("a",EInteger(5)),
 #           ("b",ECall("*",[EId("a"),EId("a")]))],
 #               ECall("-",[EId("a"),EId("b")])).evalEnv(INITIAL_FUN_DICT,env).value
@@ -342,163 +357,163 @@ INITIAL_FUN_DICT = {
 # PARSER
 
 # cf http://pyparsing.wikispaces.com/
-print ECall(+,[ELet([(x,EInteger(20))],ECall(*,[EId(x),EId(x)])),EInteger(10)]).evalEnv(INITIAL_FUN_DICT,env).value
+# print ECall(+,[ELet([(x,EInteger(20))],ECall(*,[EId(x),EId(x)])),EInteger(10)]).evalEnv(INITIAL_FUN_DICT,env).value
 
-# def parse (input):
-#     # parse a string into an element of the abstract representation
+def parse (input):
+    # parse a string into an element of the abstract representation
 
-#     # Grammar:
-#     #
-#     # <expr> ::= <integer>
-#     #            true
-#     #            false
-#     #            <identifier>
-#     #            ( if <expr> <expr> <expr> )
-#     #            ( let ( ( <name> <expr> ) ) <expr> )
-#     #            ( <name> <expr> ... )
-#     #
-#     def and_helper(result):
-#         if len(result) == 3:
-#             return EBoolean(True)
-#         elif len(result) == 4:
-#             return result[2]
-#         elif len(result) == 5:
-#             return EIf(result[2], result[3], EBoolean(False))
-#         else:
-#             first = result[:-3]
-#             last = EIf(result[-3], result[-2], EBoolean(False))
-#             first.append(last)
-#             first.append(")")
-#             return and_helper(first)
+    # Grammar:
+    #
+    # <expr> ::= <integer>
+    #            true
+    #            false
+    #            <identifier>
+    #            ( if <expr> <expr> <expr> )
+    #            ( let ( ( <name> <expr> ) ) <expr> )
+    #            ( <name> <expr> ... )
+    #
+    def and_helper(result):
+        if len(result) == 3:
+            return EBoolean(True)
+        elif len(result) == 4:
+            return result[2]
+        elif len(result) == 5:
+            return EIf(result[2], result[3], EBoolean(False))
+        else:
+            first = result[:-3]
+            last = EIf(result[-3], result[-2], EBoolean(False))
+            first.append(last)
+            first.append(")")
+            return and_helper(first)
 
-#     def or_helper(result):
-#         if len(result) == 3:
-#             return EBoolean(True)
-#         elif len(result) == 4:
-#             return result[2]
-#         elif len(result) == 5:
-#             return EIf(result[2], EBoolean(True), result[3])
-#         else:
-#             first = result[:-3]
-#             last = EIf(result[-3], EBoolean(True), result[-2])
-#             first.append(last)
-#             first.append(")")
-#             return or_helper(first)
+    def or_helper(result):
+        if len(result) == 3:
+            return EBoolean(True)
+        elif len(result) == 4:
+            return result[2]
+        elif len(result) == 5:
+            return EIf(result[2], EBoolean(True), result[3])
+        else:
+            first = result[:-3]
+            last = EIf(result[-3], EBoolean(True), result[-2])
+            first.append(last)
+            first.append(")")
+            return or_helper(first)
 
-#     def recurse_condition(result):
-#         if len(result) == 1:
-#             return EIf(result[0][0],result[0][1],EBoolean(False))
-#         else:
-#             return EIf(result[0][0],result[0][1],recurse_condition(result[1:]))
+    def recurse_condition(result):
+        if len(result) == 1:
+            return EIf(result[0][0],result[0][1],EBoolean(False))
+        else:
+            return EIf(result[0][0],result[0][1],recurse_condition(result[1:]))
 
-#     def letstar_helper(result):
-#         if len(result) == 7:
-#             return ELet([result[3]], result[5])
-#         else:
-#             return ELet([result[3]], letstar_helper(result[:3] + result[4:]))
+    def letstar_helper(result):
+        if len(result) == 7:
+            return ELet([result[3]], result[5])
+        else:
+            return ELet([result[3]], letstar_helper(result[:3] + result[4:]))
 
-#     idChars = alphas+"_+*-?!=<>"
+    idChars = alphas+"_+*-?!=<>"
 
-#     pIDENTIFIER = Word(idChars, idChars+"0123456789")
-#     pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
+    pIDENTIFIER = Word(idChars, idChars+"0123456789")
+    pIDENTIFIER.setParseAction(lambda result: EId(result[0]))
 
-#     # A name is like an identifier but it does not return an EId...
-#     pNAME = Word(idChars,idChars+"0123456789")
+    # A name is like an identifier but it does not return an EId...
+    pNAME = Word(idChars,idChars+"0123456789")
 
-#     pNAMES = ZeroOrMore(pNAME)
-#     pNAMES.setParseAction(lambda result: [result])
+    pNAMES = ZeroOrMore(pNAME)
+    pNAMES.setParseAction(lambda result: [result])
 
-#     pINTEGER = Word("-0123456789","0123456789")
-#     pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
+    pINTEGER = Word("-0123456789","0123456789")
+    pINTEGER.setParseAction(lambda result: EInteger(int(result[0])))
 
-#     pBOOLEAN = Keyword("true") | Keyword("false")
-#     pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
+    pBOOLEAN = Keyword("true") | Keyword("false")
+    pBOOLEAN.setParseAction(lambda result: EBoolean(result[0]=="true"))
 
-#     pEXPR = Forward()
+    pEXPR = Forward()
 
-#     pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
-#     pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
+    pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
+    pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
 
-#     pAND = "(" + Keyword("and") + ZeroOrMore(pEXPR) + ")"
-#     pAND.setParseAction(and_helper)
+    pAND = "(" + Keyword("and") + ZeroOrMore(pEXPR) + ")"
+    pAND.setParseAction(and_helper)
 
-#     pOR = "(" + Keyword("or") + ZeroOrMore(pEXPR) + ")"
-#     pOR.setParseAction(or_helper)
+    pOR = "(" + Keyword("or") + ZeroOrMore(pEXPR) + ")"
+    pOR.setParseAction(or_helper)
 
-#     pBINDING = "(" + pNAME + pEXPR + ")"
-#     pBINDING.setParseAction(lambda result: (result[1],result[2]))
+    pBINDING = "(" + pNAME + pEXPR + ")"
+    pBINDING.setParseAction(lambda result: (result[1],result[2]))
 
-#     pBINDINGS = OneOrMore(pBINDING)
-#     pBINDINGS.setParseAction(lambda result: [ result ])
+    pBINDINGS = OneOrMore(pBINDING)
+    pBINDINGS.setParseAction(lambda result: [ result ])
 
-#     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
-#     pLET.setParseAction(lambda result: ELet(result[3],result[5]))
+    pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
+    pLET.setParseAction(lambda result: ELet(result[3],result[5]))
 
-#     pLETSTAR = "(" + Keyword("let*") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
-#     pLETSTAR.setParseAction(lambda result: letstar_helper(result))
+    pLETSTAR = "(" + Keyword("let*") + "(" + OneOrMore(pBINDING) + ")" + pEXPR + ")"
+    pLETSTAR.setParseAction(lambda result: letstar_helper(result))
 
-#     pCONDITION = "(" + pEXPR + pINTEGER + ")"
-#     pCONDITION.setParseAction(lambda result: (result[1],result[2]))
+    pCONDITION = "(" + pEXPR + pINTEGER + ")"
+    pCONDITION.setParseAction(lambda result: (result[1],result[2]))
 
-#     pCONDITIONS = OneOrMore(pCONDITION)
-#     pCONDITIONS.setParseAction(lambda result:[result])
+    pCONDITIONS = OneOrMore(pCONDITION)
+    pCONDITIONS.setParseAction(lambda result:[result])
 
-#     pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
-#     # pCOND.setParseAction(recurse_condition)
-#     pCOND.setParseAction(lambda result: recurse_condition(result[2]))
+    pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
+    # pCOND.setParseAction(recurse_condition)
+    pCOND.setParseAction(lambda result: recurse_condition(result[2]))
 
-#     pEXPRS = ZeroOrMore(pEXPR)
-#     pEXPRS.setParseAction(lambda result: [result])
+    pEXPRS = ZeroOrMore(pEXPR)
+    pEXPRS.setParseAction(lambda result: [result])
 
-#     pCALL = "(" + pNAME + pEXPRS + ")"
-#     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
+    pCALL = "(" + pNAME + pEXPRS + ")"
+    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-#     pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCOND | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pAND | pOR | pLET | pLETSTAR | pCOND | pCALL)
 
-#     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
-#     pTOPEXPR = pEXPR.copy()
-#     pTOPEXPR.setParseAction(lambda result: {"result":"expression","expr":result[0]})
+    # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
+    pTOPEXPR = pEXPR.copy()
+    pTOPEXPR.setParseAction(lambda result: {"result":"expression","expr":result[0]})
     
-#     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + pNAMES + ")" + pEXPR + ")"
-#     pDEFUN.setParseAction(lambda result: {"result":"function",
-#                                           "name":result[2],
-#                                           "params":result[4],
-#                                           "body":result[6]})
+    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + pNAMES + ")" + pEXPR + ")"
+    pDEFUN.setParseAction(lambda result: {"result":"function",
+                                          "name":result[2],
+                                          "params":result[4],
+                                          "body":result[6]})
 
-#     pTOP = (pDEFUN | pTOPEXPR)
+    pTOP = (pDEFUN | pTOPEXPR)
 
-#     result = pTOP.parseString(input)[0]
-#     return result    # the first element of the result is the expression
+    result = pTOP.parseString(input)[0]
+    return result    # the first element of the result is the expression
 
 
-# def shell ():
-#     # A simple shell
-#     # Repeatedly read a line of input, parse it, and evaluate the result
+def shell ():
+    # A simple shell
+    # Repeatedly read a line of input, parse it, and evaluate the result
 
-#     print "Homework 4 - Calc Language"
+    print "Homework 4 - Calc Language"
 
-#     # work on a copy because we'll be adding to it
-#     fun_dict = INITIAL_FUN_DICT.copy()
+    # work on a copy because we'll be adding to it
+    fun_dict = INITIAL_FUN_DICT.copy()
     
-#     while True:
-#         inp = raw_input("calc> ")
-#         if not inp:
-#             return
-#         result = parse(inp)
-#         if result["result"] == "expression":
-#             exp = result["expr"]
-#             print "Abstract representation:", exp
-#             env = []
-#             v = exp.evalEnv(fun_dict,env)
-#             print v
-#         elif result["result"] == "function":
-#             # a result is already of the right form to put in the
-#             # functions dictionary
-#             fun_dict[result["name"]] = result
-#             print "Function {} added to functions dictionary".format(result["name"])
+    while True:
+        inp = raw_input("calc> ")
+        if not inp:
+            return
+        result = parse(inp)
+        if result["result"] == "expression":
+            exp = result["expr"]
+            print "Abstract representation:", exp
+            env = []
+            v = exp.evalEnv(fun_dict,env)
+            print v
+        elif result["result"] == "function":
+            # a result is already of the right form to put in the
+            # functions dictionary
+            fun_dict[result["name"]] = result
+            print "Function {} added to functions dictionary".format(result["name"])
 
-# # increase stack size to let us call recursive functions quasi comfortably
-# sys.setrecursionlimit(10000)
+# increase stack size to let us call recursive functions quasi comfortably
+sys.setrecursionlimit(10000)
 
 
-# shell()
+shell()
