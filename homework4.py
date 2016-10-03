@@ -429,7 +429,7 @@ def parse (input):
     pCONDITION = "(" + pEXPR + pINTEGER + ")"
     pCONDITION.setParseAction(lambda result: (result[1],result[2]))
 
-    pCONDITIONS = OneOrMore(pCONDITION)
+    pCONDITIONS = ZeroOrMore(pCONDITION)
     pCONDITIONS.setParseAction(lambda result:[result])
 
     pCOND = "(" + Keyword("cond") + pCONDITIONS + ")"
