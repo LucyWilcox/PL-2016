@@ -105,26 +105,16 @@ class ECall (Exp):
         f = self._fun.eval(env)
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
-        new_args = []
-        for a in self._args:
-            arg = a.eval(env)
-            print arg, "ARG"
-            new_args.append(a.eval(env))
-            print new_args, "###"
-        print new_args, "NEW"
-        print "ISSUE", f.params
-        new_env = [(f.params, new_args)] + f.env
-        # new_env = [(f.param,arg)] + f.env
+        new_args = [x.eval(env) for x in self._args]
+
+        new_vals = zip(f.params, new_args)
+        new_env = new_vals + f.env
         return f.body.eval(new_env)
 
 class EFunction (Exp):
     # Creates an anonymous function
 
     def __init__ (self,params,body):
-        print "body", body
-        # if len(params) != 1:
-        #     raise Exception("ERROR: multi-argument EFunction not implemented")
-        # self._param = params[0]
         self._params = params
         self._body = body
 
