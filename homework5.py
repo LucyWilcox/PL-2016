@@ -81,11 +81,8 @@ class EId (Exp):
         return "EId({})".format(self._id)
 
     def eval (self,env):
-        print "YEAH***", self._id, env
         for (id,v) in env:
             if self._id == id:
-                return v
-            elif [self._id] == id:
                 return v
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
 
@@ -103,15 +100,11 @@ class ECall (Exp):
 
     def eval (self,env):
         f = self._fun.eval(env)
-        print "F", f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         new_args = [x.eval(env) for x in self._args]
-        print "PARAMAS", f.params, f.params[0], new_args
         new_vals = zip(f.params, new_args)
-        print "nNEWVVVV", new_vals
         new_env = new_vals + f.env
-        print "NEW ENV", new_env
         return f.body.eval(new_env)
 
 class EFunction (Exp):
@@ -166,7 +159,6 @@ class VClosure (Value):
             
         # self.param = params[0]
         self.params = params
-        print "$$$$", self.params
         self.body = body
         self.env = env
         self.type = "function"
@@ -358,7 +350,7 @@ def shell ():
                 # the top-level environment is special, it is shared
                 # amongst all the top-level closures so that all top-level
                 # functions can refer to each other
-                env.insert(0,(result["name"],VClosure([result["params"]],result["body"],env)))
+                env.insert(0,(result["name"],VClosure(result["params"],result["body"],env)))
                 print "Function {} added to top-level environment".format(result["name"])
 
         except Exception as e:
