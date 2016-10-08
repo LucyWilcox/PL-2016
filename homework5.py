@@ -81,8 +81,11 @@ class EId (Exp):
         return "EId({})".format(self._id)
 
     def eval (self,env):
+        print "YEAH***", self._id, env
         for (id,v) in env:
             if self._id == id:
+                return v
+            elif [self._id] == id:
                 return v
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
 
@@ -96,19 +99,19 @@ class ECall (Exp):
         self._args = exps
 
     def __str__ (self):
-        return "ECall({},[{}])".format(str(self._fun),str(self._args))
+        return "ECall({},{})".format(str(self._fun),str(self._args))
 
     def eval (self,env):
-        print self._fun,"#", self._args #, env
         f = self._fun.eval(env)
         print "F", f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         new_args = [x.eval(env) for x in self._args]
-        print "NEW", new_args
+        print "PARAMAS", f.params, f.params[0], new_args
         new_vals = zip(f.params, new_args)
+        print "nNEWVVVV", new_vals
         new_env = new_vals + f.env
-        print "BODY", f.body
+        print "NEW ENV", new_env
         return f.body.eval(new_env)
 
 class EFunction (Exp):
@@ -163,6 +166,7 @@ class VClosure (Value):
             
         # self.param = params[0]
         self.params = params
+        print "$$$$", self.params
         self.body = body
         self.env = env
         self.type = "function"
@@ -316,7 +320,7 @@ def parse (input):
     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(lambda result: {"result":"function",
                                           "name":result[2],
-                                          "params":result[4:-4],
+                                          "params":result[4:-3],
                                           "body":result[-2]})
     pTOP = (pDEFUN | pTOPEXPR)
 
@@ -354,7 +358,7 @@ def shell ():
                 # the top-level environment is special, it is shared
                 # amongst all the top-level closures so that all top-level
                 # functions can refer to each other
-                env.insert(0,(result["name"],VClosure([result["param"]],result["body"],env)))
+                env.insert(0,(result["name"],VClosure([result["params"]],result["body"],env)))
                 print "Function {} added to top-level environment".format(result["name"])
 
         except Exception as e:
@@ -444,7 +448,7 @@ def shell_curry ():
                 # the top-level environment is special, it is shared
                 # amongst all the top-level closures so that all top-level
                 # functions can refer to each other
-                env.insert(0,(result["name"],VClosure([result["param"]],result["body"],env)))
+                env.insert(0,(result["name"],VClosure([result["params"]],result["body"],env)))
                 print "Function {} added to top-level environment".format(result["name"])
 
         except Exception as e:
