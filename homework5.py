@@ -93,35 +93,46 @@ class ECall (Exp):
 
     def __init__ (self,fun,exps):
         self._fun = fun
-        if len(exps) != 1:
-            raise Exception("ERROR: multi-argument ECall not implemented")
-        self._arg = exps[0]
+        # if len(exps) != 1:
+        #     raise Exception("ERROR: multi-argument ECall not implemented")
+        # self._arg = exps[0]
+        self._args = exps
 
     def __str__ (self):
-        return "ECall({},[{}])".format(str(self._fun),str(self._arg))
+        return "ECall({},[{}])".format(str(self._fun),str(self._args))
 
     def eval (self,env):
         f = self._fun.eval(env)
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
-        arg = self._arg.eval(env)
-        new_env = [(f.param,arg)] + f.env
+        new_args = []
+        for a in self._args:
+            arg = a.eval(env)
+            print arg, "ARG"
+            new_args.append(a.eval(env))
+            print new_args, "###"
+        print new_args, "NEW"
+        print "ISSUE", f.params
+        new_env = [(f.params, new_args)] + f.env
+        # new_env = [(f.param,arg)] + f.env
         return f.body.eval(new_env)
 
 class EFunction (Exp):
     # Creates an anonymous function
 
     def __init__ (self,params,body):
-        if len(params) != 1:
-            raise Exception("ERROR: multi-argument EFunction not implemented")
-        self._param = params[0]
+        print "body", body
+        # if len(params) != 1:
+        #     raise Exception("ERROR: multi-argument EFunction not implemented")
+        # self._param = params[0]
+        self._params = params
         self._body = body
 
     def __str__ (self):
-        return "EFunction([{}],{})".format(self._param,str(self._body))
+        return "EFunction({},{})".format(self._params,str(self._body))
 
     def eval (self,env):
-        return VClosure(self._param,self._body,env)
+        return VClosure(self._params,self._body,env)
 
     
 #
@@ -157,16 +168,17 @@ class VBoolean (Value):
 class VClosure (Value):
     
     def __init__ (self,params,body,env):
-        if len(params) != 1:
-            raise Exception("ERROR: multi-argument VClosure not implemented")
+        # if len(params) != 1:
+        #     raise Exception("ERROR: multi-argument VClosure not implemented")
             
-        self.param = params[0]
+        # self.param = params[0]
+        self.params = params
         self.body = body
         self.env = env
         self.type = "function"
 
     def __str__ (self):
-        return "<function [{}] {}>".format(self.param,str(self.body))
+        return "<function [{}] {}>".format(self.params,str(self.body))
 
 
 
@@ -271,7 +283,6 @@ def parse (input):
     # <definition> ::= ( defun <name> ( <name> ) <expr> )
     #
 
-
     idChars = alphas+"_+*-~/?!=<>"
 
     pIDENTIFIER = Word(idChars, idChars+"0123456789")
@@ -300,11 +311,11 @@ def parse (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(lambda result: letUnimplementedError())
 
-    pCALL = "(" + pEXPR + pEXPR + ")"
-    pCALL.setParseAction(lambda result: ECall(result[1],[result[2]]))
+    pCALL = "(" + pEXPR + OneOrMore(pEXPR) + ")"
+    pCALL.setParseAction(lambda result: ECall(result[1],result[2:-1]))
 
-    pFUN = "(" + Keyword("function") + "(" + pNAME + ")" + pEXPR + ")"
-    pFUN.setParseAction(lambda result: EFunction(result[3],result[5]))
+    pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
 
     pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pCALL)
 
@@ -333,7 +344,7 @@ def shell ():
 
     ## UNCOMMENT THIS LINE WHEN YOU COMPLETE Q1 IF YOU WANT TO TRY
     ## EXAMPLES
-    ## env = initial_env()
+    env = initial_env()
     while True:
         inp = raw_input("func> ")
 
@@ -449,3 +460,4 @@ def shell_curry ():
         except Exception as e:
             print "Exception: {}".format(e)
 
+shell()
