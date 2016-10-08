@@ -268,6 +268,16 @@ def parse (input):
     #
     # <definition> ::= ( defun <name> ( <name> ) <expr> )
     #
+    def letToFun(result):
+        func = result[5]
+        binds = result[3]
+        params = []
+        vals = []
+        for p, v in binds:
+            params.append(p)
+            vals.append(v)
+        return ECall(EFunction(params, func), vals)
+
 
     idChars = alphas+"_+*-~/?!=<>"
 
@@ -295,7 +305,7 @@ def parse (input):
     pBINDINGS.setParseAction(lambda result: [ result ])
 
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
-    pLET.setParseAction(lambda result: letUnimplementedError())
+    pLET.setParseAction(letToFun)
 
     pCALL = "(" + pEXPR + OneOrMore(pEXPR) + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2:-1]))
