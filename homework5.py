@@ -93,22 +93,22 @@ class ECall (Exp):
 
     def __init__ (self,fun,exps):
         self._fun = fun
-        # if len(exps) != 1:
-        #     raise Exception("ERROR: multi-argument ECall not implemented")
-        # self._arg = exps[0]
         self._args = exps
 
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),str(self._args))
 
     def eval (self,env):
+        print self._fun,"#", self._args #, env
         f = self._fun.eval(env)
+        print "F", f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         new_args = [x.eval(env) for x in self._args]
-
+        print "NEW", new_args
         new_vals = zip(f.params, new_args)
         new_env = new_vals + f.env
+        print "BODY", f.body
         return f.body.eval(new_env)
 
 class EFunction (Exp):
@@ -168,7 +168,7 @@ class VClosure (Value):
         self.type = "function"
 
     def __str__ (self):
-        return "<function [{}] {}>".format(self.params,str(self.body))
+        return "<function {} {}>".format(self.params,str(self.body))
 
 
 
@@ -313,11 +313,11 @@ def parse (input):
     pTOPEXPR = pEXPR.copy()
     pTOPEXPR.setParseAction(lambda result: {"result":"expression","expr":result[0]})
 
-    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + pNAME + ")" + pEXPR + ")"
+    pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(lambda result: {"result":"function",
                                           "name":result[2],
-                                          "param":result[4],
-                                          "body":result[6]})
+                                          "params":result[4:-4],
+                                          "body":result[-2]})
     pTOP = (pDEFUN | pTOPEXPR)
 
     result = pTOP.parseString(input)[0]
