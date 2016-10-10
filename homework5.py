@@ -110,14 +110,20 @@ class ECall (Exp):
 class EFunction (Exp):
     # Creates an anonymous function
 
-    def __init__ (self,params,body):
+    def __init__ (self,params,body,name):
         self._params = params
         self._body = body
+        self._name = name
+        print self._params
 
     def __str__ (self):
         return "EFunction({},{})".format(self._params,str(self._body))
 
     def eval (self,env):
+        if self._name:
+            print self._params
+
+            env.append((self._name,EFunction(self._params,self._body,self._name)))
         return VClosure(self._params,self._body,env)
 
     
@@ -165,7 +171,6 @@ class VClosure (Value):
 
     def __str__ (self):
         return "<function {} {}>".format(self.params,str(self.body))
-
 
 
 # Primitive operations
@@ -239,8 +244,14 @@ def initial_env ():
     env.extend(base)
     return env
 
-
-
+e = EFunction(["n"],
+                  EIf(ECall(EId("zero?"),[EId("n")]),
+              EValue(VInteger(0)),
+              ECall(EId("+"),[EId("n"),
+                              ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
+                  name="me")
+f = e.eval(initial_env())
+ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
 ##
 ## PARSER
 ##
