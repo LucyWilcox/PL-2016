@@ -432,27 +432,43 @@ def parse_curry (input):
         return ECall(EFunction(params, func), vals)
 
     def eCallHelper(first, rest, last = []):
-        print rest, "RESt", first
         if type(rest) is not list:
             return ECall(first, [rest])
         else:
             return ECall(eCallHelper(first, rest[0]), rest[1:])
-            # return ECall(first, eCallHelper(rest[0], rest[1:]))
 
     def eCall(result):
-        print "INPUT", result
         first = result[1]
-        print "FIRST", first
         rest = result[2:-1]
-        print len(rest)
-        # last = result[-1]
-        print first, rest, "%%"
-        yes =  eCallHelper(first, rest)
-        print "YES", yes
-        return yes
-        # if len(rest) == 1:
-        #     return ECall(first, rest)
+        return eCallHelper(first, rest)
 
+    def eFunHelper(variables, expression):
+        if len(variables) == 1:
+            return EFunction(variables[0], expression)
+        else:
+            return EFunction(variables[0], eFunHelper(variables[1:], expression))
+
+    def eFun(result):
+        print result
+        variables = result[3:-3]
+        expression = result[-2]
+        return eFunHelper(variables, expression)
+        # EFunction(result[3:-3],result[-2])
+        # return y
+
+    def eDeFun(result):
+
+        expression = result[-2]
+        variables = result[4:-3]
+        build_list = ["(","function","("]
+        build_list.extend(variables)
+        build_list.extend([")",result[-2],")"])
+        print build_list, "****"
+        fun = eFun(build_list)
+        return {"result":"function",
+                "name":result[2],
+                "params":result[4:-3],
+                "body":fun}
 
     idChars = alphas+"_+*-~/?!=<>"
 
@@ -487,7 +503,8 @@ def parse_curry (input):
     # pCALL.setParseAction(lambda result: ECall(result[1],result[2:-1]))
 
     pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-    pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
+    pFUN.setParseAction(eFun)
+    # pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
 
     pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pCALL)
 
@@ -496,10 +513,11 @@ def parse_curry (input):
     pTOPEXPR.setParseAction(lambda result: {"result":"expression","expr":result[0]})
 
     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-    pDEFUN.setParseAction(lambda result: {"result":"function",
-                                          "name":result[2],
-                                          "params":result[4:-3],
-                                          "body":result[-2]})
+    pDEFUN.setParseAction(eDeFun)
+    # pDEFUN.setParseAction(lambda result: {"result":"function",
+    #                                       "name":result[2],
+    #                                       "params":result[4:-3],
+    #                                       "body":result[-2]})
     pTOP = (pDEFUN | pTOPEXPR)
 
     result = pTOP.parseString(input)[0]
