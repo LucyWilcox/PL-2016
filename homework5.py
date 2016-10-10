@@ -115,7 +115,7 @@ class EFunction (Exp):
         self._body = body
 
     def __str__ (self):
-        return "EFunction({},{})".format(self._params,str(self._body))
+        return "EFunction([{}],{})".format(self._params,str(self._body))
 
     def eval (self,env):
         return VClosure(self._params,self._body,env)
@@ -431,17 +431,17 @@ def parse_curry (input):
             vals.append(v)
         return ECall(EFunction(params, func), vals)
 
-    def eCallHelper(first, rest, last = []):
-        if type(rest) is not list:
-            return ECall(first, [rest])
+    def eCallHelper(first, rest):
+        if len(rest) == 1:
+            return ECall(first, rest)
         else:
-            return ECall(eCallHelper(first, rest[0]), rest[1:])
+            return ECall(eCallHelper(first, rest[:-1]), [rest[-1]])
 
     def eCall(result):
         first = result[1]
         rest = result[2:-1]
         return eCallHelper(first, rest)
-
+        
     def eFunHelper(variables, expression):
         if len(variables) == 1:
             return EFunction(variables[0], expression)
@@ -457,17 +457,18 @@ def parse_curry (input):
         # return y
 
     def eDeFun(result):
-
+        print result[4], "TTTTT"
         expression = result[-2]
-        variables = result[4:-3]
+        variables = result[5:-3]
         build_list = ["(","function","("]
         build_list.extend(variables)
         build_list.extend([")",result[-2],")"])
         print build_list, "****"
         fun = eFun(build_list)
+        print fun
         return {"result":"function",
                 "name":result[2],
-                "params":result[4:-3],
+                "params":result[4],
                 "body":fun}
 
     idChars = alphas+"_+*-~/?!=<>"
