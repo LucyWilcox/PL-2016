@@ -432,7 +432,7 @@ def parse_curry (input):
         return ECall(EFunction(params, func), vals)
 
     def eCallHelper(first, rest, last = []):
-        print rest
+        print rest, "RESt", first
         if type(rest) is not list:
             return ECall(first, [rest])
         else:
@@ -442,11 +442,14 @@ def parse_curry (input):
     def eCall(result):
         print "INPUT", result
         first = result[1]
+        print "FIRST", first
         rest = result[2:-1]
         print len(rest)
         # last = result[-1]
         print first, rest, "%%"
-        return eCallHelper(first, rest)
+        yes =  eCallHelper(first, rest)
+        print "YES", yes
+        return yes
         # if len(rest) == 1:
         #     return ECall(first, rest)
 
