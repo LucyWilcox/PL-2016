@@ -110,7 +110,7 @@ class ECall (Exp):
 class EFunction (Exp):
     # Creates an anonymous function
 
-    def __init__ (self,params,body,name):
+    def __init__ (self,params,body,name = ""):
         self._params = params
         self._body = body
         self._name = name
@@ -120,10 +120,10 @@ class EFunction (Exp):
         return "EFunction([{}],{})".format(self._params,str(self._body))
 
     def eval (self,env):
-        if self._name:
-            print self._params
+        # if self._name:
+        #     print self._params
 
-            env.append((self._name,EFunction(self._params,self._body,self._name)))
+        #     env.append((self._name,EFunction(self._params,self._body,self._name)))
         return VClosure(self._params,self._body,env)
 
     
@@ -244,14 +244,14 @@ def initial_env ():
     env.extend(base)
     return env
 
-e = EFunction(["n"],
-                  EIf(ECall(EId("zero?"),[EId("n")]),
-              EValue(VInteger(0)),
-              ECall(EId("+"),[EId("n"),
-                              ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
-                  name="me")
-f = e.eval(initial_env())
-ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
+# e = EFunction(["n"],
+#                   EIf(ECall(EId("zero?"),[EId("n")]),
+#               EValue(VInteger(0)),
+#               ECall(EId("+"),[EId("n"),
+#                               ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
+#                   name="me")
+# f = e.eval(initial_env())
+# ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
 ##
 ## PARSER
 ##
@@ -468,15 +468,12 @@ def parse_curry (input):
         # return y
 
     def eDeFun(result):
-        print result[4], "TTTTT"
         expression = result[-2]
         variables = result[5:-3]
         build_list = ["(","function","("]
         build_list.extend(variables)
         build_list.extend([")",result[-2],")"])
-        print build_list, "****"
         fun = eFun(build_list)
-        print fun
         return {"result":"function",
                 "name":result[2],
                 "params":result[4],
