@@ -464,13 +464,16 @@ def parse_curry (input):
         expression = result[-2]
         print expression,"expression"
         print variables,"BARnaMR"
-        return eFunNameHelper(variables, expression, varName)
+        return EFunction(variables, expression, varName)
+        #here is the curry implementation 
+        # return eFunNameHelper(variables, expression, varName)
 
-    def eFunNameHelper(variables, expression, name):
-        if len(variables) == 1:
-            return EFunction(variables[0], expression,name)
-        else:
-            return EFunction(variables[0], eFunNameHelper(variables[1:], expression,name))
+    # def eFunNameHelper(variables, expression, name):
+    #     if len(variables) == 1:
+    #         return EFunction(variables[0], expression,name)
+    #     else:
+    #         print "came to more than one variable"
+    #         return EFunction(variables[0], eFunNameHelper(variables[1:], expression,name))
 
 
     def eDeFun(result):
@@ -520,7 +523,7 @@ def parse_curry (input):
     pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pFUN.setParseAction(eFun)
 
-    pFUNNAME = "(" + Keyword("function") +pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pFUNNAME = "(" + Keyword("function") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pFUNNAME.setParseAction(eFunName)
 
     # pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
