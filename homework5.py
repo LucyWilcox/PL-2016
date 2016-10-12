@@ -2,9 +2,11 @@
 # HOMEWORK 5
 #
 # Team members:
-#
+# Lucy Wilcox
+# Xiaofan Wu
 # Emails:
-#
+# lucy.wilcox@students.olin.edu
+# wuxiaofan1996@gmail.com
 # Remarks:
 #
 
@@ -89,7 +91,6 @@ class EId (Exp):
 
 class ECall (Exp):
     # Call a defined function in the function dictionary
-    # can be pass several arguments, but only handles one
 
     def __init__ (self,fun,exps):
         self._fun = fun
@@ -157,10 +158,6 @@ class VBoolean (Value):
 class VClosure (Value):
     
     def __init__ (self,params,body,env):
-        # if len(params) != 1:
-        #     raise Exception("ERROR: multi-argument VClosure not implemented")
-            
-        # self.param = params[0]
         self.params = params
         self.body = body
         self.env = env
@@ -234,17 +231,6 @@ def initial_env ():
                   env)))
     return env
 
-
-
-
-e = EFunction(["n"],
-                  EIf(ECall(EId("zero?"),[EId("n")]),
-              EValue(VInteger(0)),
-              ECall(EId("+"),[EId("n"),
-                              ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
-                  name="me")
-f = e.eval(initial_env())
-print ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
 ##
 ## PARSER
 ##
@@ -282,6 +268,12 @@ def parse (input):
             vals.append(v)
         return ECall(EFunction(params, func), vals)
 
+    def eFunName(result):
+        varName = result[2]
+        variables = result[4:-3]
+        expression = result[-2]
+        return EFunction(variables, expression, varName)
+
     idChars = alphas+"_+*-~/?!=<>"
 
     pIDENTIFIER = Word(idChars, idChars+"0123456789")
@@ -316,7 +308,10 @@ def parse (input):
     pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pCALL)
+    pFUNNAME = "(" + Keyword("function") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pFUNNAME.setParseAction(eFunName)
+
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pFUNNAME | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
@@ -341,8 +336,6 @@ def shell ():
     print "#quit to quit"
     env = []
 
-    ## UNCOMMENT THIS LINE WHEN YOU COMPLETE Q1 IF YOU WANT TO TRY
-    ## EXAMPLES
     env = initial_env()
     while True:
         inp = raw_input("func> ")
@@ -369,12 +362,8 @@ def shell ():
         except Exception as e:
             print "Exception: {}".format(e)
 
-
-        
 # increase stack size to let us call recursive functions quasi comfortably
 sys.setrecursionlimit(10000)
-
-
 
 
 def initial_env_curry ():
@@ -417,9 +406,6 @@ def initial_env_curry ():
                   env)))
     return env
 
-
-
-
 def parse_curry (input):
     def letToFun(result):
         func = result[5]
@@ -449,32 +435,9 @@ def parse_curry (input):
             return EFunction(variables[0], eFunHelper(variables[1:], expression))
 
     def eFun(result):
-        print result,"result!!!!!!!!!"
         variables = result[3:-3]
-        print variables,"variables"
         expression = result[-2]
-        print expression,"expression"
         return eFunHelper(variables, expression)
-        # EFunction(result[3:-3],result[-2])
-        # return y
-    def eFunName(result):
-        print result
-        varName = result[2]
-        variables = result[4:-3]
-        expression = result[-2]
-        print expression,"expression"
-        print variables,"BARnaMR"
-        return EFunction(variables, expression, varName)
-        #here is the curry implementation 
-        # return eFunNameHelper(variables, expression, varName)
-
-    # def eFunNameHelper(variables, expression, name):
-    #     if len(variables) == 1:
-    #         return EFunction(variables[0], expression,name)
-    #     else:
-    #         print "came to more than one variable"
-    #         return EFunction(variables[0], eFunNameHelper(variables[1:], expression,name))
-
 
     def eDeFun(result):
         expression = result[-2]
@@ -523,12 +486,9 @@ def parse_curry (input):
     pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pFUN.setParseAction(eFun)
 
-    pFUNNAME = "(" + Keyword("function") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
-    pFUNNAME.setParseAction(eFunName)
-
     # pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pFUNNAME | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
@@ -536,10 +496,7 @@ def parse_curry (input):
 
     pDEFUN = "(" + Keyword("defun") + pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pDEFUN.setParseAction(eDeFun)
-    # pDEFUN.setParseAction(lambda result: {"result":"function",
-    #                                       "name":result[2],
-    #                                       "params":result[4:-3],
-    #                                       "body":result[-2]})
+
     pTOP = (pDEFUN | pTOPEXPR)
 
     result = pTOP.parseString(input)[0]
@@ -562,14 +519,12 @@ def shell_curry ():
             result = parse_curry(inp)
 
             if result["result"] == "expression":
-                print "came to expre********"
                 exp = result["expr"]
                 print "Abstract representation:", exp
                 v = exp.eval(env)
                 print v
 
             elif result["result"] == "function":
-                print "came to function^^^^^^"
                 # the top-level environment is special, it is shared
                 # amongst all the top-level closures so that all top-level
                 # functions can refer to each other
@@ -579,4 +534,5 @@ def shell_curry ():
         except Exception as e:
             print "Exception: {}".format(e)
 
-shell_curry()
+shell()
+# shell_curry()
