@@ -114,16 +114,14 @@ class EFunction (Exp):
         self._params = params
         self._body = body
         self._name = name
-        print self._params
+        # self.type = "function"
 
     def __str__ (self):
         return "EFunction([{}],{})".format(self._params,str(self._body))
 
     def eval (self,env):
-        # if self._name:
-        #     print self._params
-
-        #     env.append((self._name,EFunction(self._params,self._body,self._name)))
+        if self._name!="":
+            env.insert(0,(self._name, VClosure(self._params,self._body,env)))
         return VClosure(self._params,self._body,env)
 
     
@@ -201,63 +199,59 @@ def oper_zero (v1):
 # this initial environment works with Q1 when you've completed it
 
 def initial_env ():
-    # A sneaky way to allow functions to refer to functions that are not
-    # yet defined at top level, or recursive functions
     env = []
-    base = [ 
+    env.insert(0,
         ("+",
          VClosure(["x","y"],EPrimCall(oper_plus,
                                       [EId("x"),EId("y")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("-",
          VClosure(["x","y"],EPrimCall(oper_minus,
                                       [EId("x"),EId("y")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("*",
          VClosure(["x","y"],EPrimCall(oper_times,
                                       [EId("x"),EId("y")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("zero?",
          VClosure(["x"],EPrimCall(oper_zero,
                                   [EId("x")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("square",
          VClosure(["x"],ECall(EId("*"),[EId("x"),EId("x")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("=",
          VClosure(["x","y"],ECall(EId("zero?"),
                                   [ECall(EId("-"),[EId("x"),EId("y")])]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("+1",
          VClosure(["x"],ECall(EId("+"),[EId("x"),EValue(VInteger(1))]),
-                  env)),
-        ("sum_from_to",
-         VClosure(["s","e"],
-                  EIf(ECall(EId("="),[EId("s"),EId("e")]),
-                      EId("s"),
-                      ECall(EId("+"),[EId("s"),
-                                       ECall(EId("sum_from_to"),
-                                             [ECall(EId("+1"),[EId("s")]),
-                                              EId("e")])])),
-                  env)),
-    ]
-    env.extend(base)
+                  env)))
     return env
 
-# e = EFunction(["n"],
-#                   EIf(ECall(EId("zero?"),[EId("n")]),
-#               EValue(VInteger(0)),
-#               ECall(EId("+"),[EId("n"),
-#                               ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
-#                   name="me")
-# f = e.eval(initial_env())
-# ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
+
+
+
+e = EFunction(["n"],
+                  EIf(ECall(EId("zero?"),[EId("n")]),
+              EValue(VInteger(0)),
+              ECall(EId("+"),[EId("n"),
+                              ECall(EId("me"),[ECall(EId("-"),[EId("n"),EValue(VInteger(1))])])])),
+                  name="me")
+f = e.eval(initial_env())
+print ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
 ##
 ## PARSER
 ##
 # cf http://pyparsing.wikispaces.com/
 
-from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums
+# from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums
 
 
 def letUnimplementedError ():
@@ -383,52 +377,48 @@ sys.setrecursionlimit(10000)
 
 
 
+
 def initial_env_curry ():
-    # A sneaky way to allow functions to refer to functions that are not
-    # yet defined at top level, or recursive functions
     env = []
-    base = [ 
+    env.insert(0,
         ("+",
          VClosure(["x"],EFunction("y",EPrimCall(oper_plus,
                                               [EId("x"),EId("y")])),
-                  env)),
+                  env)))
+    env.insert(0,
         ("-",
          VClosure(["x"],EFunction("y",EPrimCall(oper_minus,
                                               [EId("x"),EId("y")])),
-                  env)),
+                  env)))
+    env.insert(0,
         ("*",
          VClosure(["x"],EFunction("y",EPrimCall(oper_times,
                                               [EId("x"),EId("y")])),
-                  env)),
+                  env)))
+    env.insert(0,
         ("zero?",
          VClosure(["x"],EPrimCall(oper_zero,
                                          [EId("x")]),
-                           env)),
+                           env)))
+    env.insert(0,
         ("square",
          VClosure(["x"],ECall(ECall(EId("*"),[EId("x")]),
                             [EId("x")]),
-                  env)),
+                  env)))
+    env.insert(0,
         ("=",
          VClosure(["x"],EFunction("y",ECall(EId("zero?"),
                                           [ECall(ECall(EId("-"),[EId("x")]),
                                                  [EId("y")])])),
-                  env)),
+                  env)))
+    env.insert(0,
         ("+1",
          VClosure(["x"],ECall(ECall(EId("+"),[EId("x")]),
                             [EValue(VInteger(1))]),
-                  env)),
-        ("sum_from_to",
-         VClosure(["s"],EFunction("e",
-                                  EIf(ECall(ECall(EId("="),[EId("s")]),[EId("e")]),
-                                      EId("s"),
-                                      ECall(ECall(EId("+"),[EId("s")]),
-                                            [ECall(ECall(EId("sum_from_to"),
-                                                         [ECall(EId("+1"),[EId("s")])]),
-                                                   [EId("e")])]))),
-                  env)),
-    ]
-    env.extend(base)
+                  env)))
     return env
+
+
 
 
 def parse_curry (input):
