@@ -114,7 +114,6 @@ class EFunction (Exp):
         self._params = params
         self._body = body
         self._name = name
-        # self.type = "function"
 
     def __str__ (self):
         return "EFunction([{}],{})".format(self._params,str(self._body))
@@ -251,7 +250,7 @@ print ECall(EValue(f),[EValue(VInteger(10))]).eval([]).value
 ##
 # cf http://pyparsing.wikispaces.com/
 
-# from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums
+from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums
 
 
 def letUnimplementedError ():
@@ -450,12 +449,29 @@ def parse_curry (input):
             return EFunction(variables[0], eFunHelper(variables[1:], expression))
 
     def eFun(result):
-        print result
+        print result,"result!!!!!!!!!"
         variables = result[3:-3]
+        print variables,"variables"
         expression = result[-2]
+        print expression,"expression"
         return eFunHelper(variables, expression)
         # EFunction(result[3:-3],result[-2])
         # return y
+    def eFunName(result):
+        print result
+        varName = result[2]
+        variables = result[4:-3]
+        expression = result[-2]
+        print expression,"expression"
+        print variables,"BARnaMR"
+        return eFunNameHelper(variables, expression, varName)
+
+    def eFunNameHelper(variables, expression, name):
+        if len(variables) == 1:
+            return EFunction(variables[0], expression,name)
+        else:
+            return EFunction(variables[0], eFunNameHelper(variables[1:], expression,name))
+
 
     def eDeFun(result):
         expression = result[-2]
@@ -503,9 +519,13 @@ def parse_curry (input):
 
     pFUN = "(" + Keyword("function") + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
     pFUN.setParseAction(eFun)
+
+    pFUNNAME = "(" + Keyword("function") +pNAME + "(" + OneOrMore(pNAME) + ")" + pEXPR + ")"
+    pFUNNAME.setParseAction(eFunName)
+
     # pFUN.setParseAction(lambda result: EFunction(result[3:-3],result[-2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pCALL)
+    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pLET | pFUN | pFUNNAME | pCALL)
 
     # can't attach a parse action to pEXPR because of recursion, so let's duplicate the parser
     pTOPEXPR = pEXPR.copy()
@@ -539,12 +559,14 @@ def shell_curry ():
             result = parse_curry(inp)
 
             if result["result"] == "expression":
+                print "came to expre********"
                 exp = result["expr"]
                 print "Abstract representation:", exp
                 v = exp.eval(env)
                 print v
 
             elif result["result"] == "function":
+                print "came to function^^^^^^"
                 # the top-level environment is special, it is shared
                 # amongst all the top-level closures so that all top-level
                 # functions can refer to each other
