@@ -185,6 +185,7 @@ class EWhile (Exp):
 class EFor (Exp):
 
     def __init__ (self, init, cond, incre, exp):
+        print (init,cond,incre,exp)
     	self._init = init
         self._cond = cond
         self._incre = incre
@@ -381,7 +382,8 @@ def parse_imp (input):
     # <toplevel> ::= <decl>
     #                <stmt>
     #
-
+    def test(result):
+        print result,"hereeeee"
 
     idChars = alphas+"_+*-?!=<>"
 
@@ -442,8 +444,9 @@ def parse_imp (input):
     pSTMT_WHILE = "while" + pEXPR + pSTMT
     pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[2]))
 
-    pSTMT_FOR = "for" + "(" + pDECL_VAR + pEXPR + ";" + pEXPR + ")" + pSTMT
-    pSTMT_FOR.setParseAction(lambda result: EFor(result[2], result[4], result[6], result[8]))
+    pSTMT_FOR = "for" +  pDECL_VAR + pEXPR + ";" + pSTMT + pSTMT 
+    # pSTMT_FOR = "for" + "(" + pDECL_VAR + pEXPR + ";" + pSTMT + ")" + pSTMT
+    pSTMT_FOR.setParseAction(test)
 
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
