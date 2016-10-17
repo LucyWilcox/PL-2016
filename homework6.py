@@ -376,7 +376,8 @@ def parse_imp (input):
     # <toplevel> ::= <decl>
     #                <stmt>
     #
-
+    def test(result):
+        print result,"hereeeee"
 
     idChars = alphas+"_+*-?!=<>"
 
