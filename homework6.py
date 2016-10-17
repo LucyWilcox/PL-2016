@@ -182,6 +182,34 @@ class EWhile (Exp):
                 raise Exception ("Runtime error: while condition not a Boolean")
         return VNone()
 
+class EFor (Exp):
+
+    def __init__ (self, init, cond, incre, exp):
+    	self._init = init
+        self._cond = cond
+        self._incre = incre
+        self._exp = exp
+
+    def __str__ (self):
+        return "EFor({},{},{},{})".format(str(self._init), str(self._cond), str(self._incre), str(self._exp))
+
+    def eval (self,env):
+    	print "FOR", self._init
+    	self._init.eval(env)
+
+
+
+
+        # c = self._cond.eval(env)
+        # if c.type != "boolean":
+        #     raise Exception ("Runtime error: while condition not a Boolean")
+        # while c.value:
+        #     self._exp.eval(env)
+        #     c = self._cond.eval(env)
+        #     if c.type != "boolean":
+        #         raise Exception ("Runtime error: while condition not a Boolean")
+        # return VNone()
+
     
 #
 # Values
@@ -414,6 +442,9 @@ def parse_imp (input):
     pSTMT_WHILE = "while" + pEXPR + pSTMT
     pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[2]))
 
+    pSTMT_FOR = "for" + "(" + pDECL_VAR + pEXPR + ";" + pEXPR + ")" + pSTMT
+    pSTMT_FOR.setParseAction(lambda result: EFor(result[2], result[4], result[6], result[8]))
+
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
@@ -430,7 +461,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_PRINT | pSTMT_UPDATE |  pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE |  pSTMT_BLOCK )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
@@ -489,3 +520,5 @@ def shell_imp ():
                 
         except Exception as e:
             print "Exception: {}".format(e)
+
+shell_imp()
