@@ -185,7 +185,7 @@ class EWhile (Exp):
 class EFor (Exp):
 
     def __init__ (self, init, cond, incre, exp):
-    	self._init = init
+        self._init = init
         self._cond = cond
         self._incre = incre
         self._exp = exp
@@ -194,22 +194,17 @@ class EFor (Exp):
         return "EFor({},{},{},{})".format(str(self._init), str(self._cond), str(self._incre), str(self._exp))
 
     def eval (self,env):
-    	print "FOR", self._init
-    	self._init.eval(env)
+        v = self._init[0][1].eval(env)
+        env.insert(0,(self._init[0][0],VRefCell(v)))
 
-
-
-
-        # c = self._cond.eval(env)
-        # if c.type != "boolean":
-        #     raise Exception ("Runtime error: while condition not a Boolean")
-        # while c.value:
-        #     self._exp.eval(env)
-        #     c = self._cond.eval(env)
-        #     if c.type != "boolean":
-        #         raise Exception ("Runtime error: while condition not a Boolean")
-        # return VNone()
-
+        c = self._cond.eval(env)
+        while c.value:
+            self._exp.eval(env)
+            self._incre.eval(env)
+            c = self._cond.eval(env)
+            if c.type != "boolean":
+                raise Exception ("Runtime error: while condition not a Boolean")
+     #change env back to what is was?? that would be nice
     
 #
 # Values
@@ -442,8 +437,8 @@ def parse_imp (input):
     pSTMT_WHILE = "while" + pEXPR + pSTMT
     pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[2]))
 
-    pSTMT_FOR = "for" + "(" + pDECL_VAR + pEXPR + ";" + pEXPR + ")" + pSTMT
-    pSTMT_FOR.setParseAction(lambda result: EFor(result[2], result[4], result[6], result[8]))
+    pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
+    pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
 
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
