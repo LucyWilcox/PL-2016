@@ -263,11 +263,21 @@ class VString(Value):
 
     def __init__ (self,initial):
         self.content = initial
+        self.stringContent = ""
+        for eachString in self.content:
+            print (eachString,"eachString")
+            self.stringContent += eachString + " "
+        if self.stringContent[-1] == " ":
+            self.stringContent[:-1]
         self.type = "string"
+        print ("content",self.stringContent)
 
     def __str__ (self):
         return str(self.content)
 
+    def __len__(self):
+        print (len(self.stringContent),"length of content")
+        return len(self.stringContent)
 
 class VNone (Value):
 
@@ -316,6 +326,7 @@ def oper_print (v1):
     return VNone()
 
 def oper_length(v1):
+    print v1
     if v1.type == "string":
         return VInteger(len(v1))
     raise Exception ("Runtime error: variable is not a string type")
@@ -414,6 +425,9 @@ def parse_imp (input):
     pINTEGER = Word("0123456789")
     pINTEGER.setParseAction(lambda result: EValue(VInteger(int(result[0]))))
 
+    pSTRING = Literal('"') + pNAMES + Literal('"')
+    pSTRING.setParseAction(lambda result: EValue(VString(str(result[1]))))
+
     pBOOLEAN = Keyword("true") | Keyword("false")
     pBOOLEAN.setParseAction(lambda result: EValue(VBoolean(result[0]=="true")))
 
@@ -435,7 +449,8 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
+
+    pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -491,7 +506,6 @@ def parse_imp (input):
     pABSTRACT = "#abs" + pSTMT
     pABSTRACT.setParseAction(lambda result: {"result":"abstract",
                                              "stmt":result[1]})
-
     pQUIT = Keyword("#quit")
     pQUIT.setParseAction(lambda result: {"result":"quit"})
     
