@@ -266,7 +266,7 @@ class VString(Value):
         self.type = "string"
 
     def __str__ (self):
-        return "<string {}>".format(str(self.content))
+        return str(self.content)
 
 
 class VNone (Value):
@@ -315,7 +315,11 @@ def oper_print (v1):
     print v1
     return VNone()
 
-    
+def oper_length(v1):
+    if v1.type == "string":
+        return VInteger(len(v1))
+    raise Exception ("Runtime error: variable is not a string type")
+
 
 
 ############################################################
@@ -356,6 +360,11 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x"],
                                   EPrimCall(oper_zero,[EId("x")]),
                                   env))))
+    env.insert(0,
+                ("length",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(oper_length,[EId("x")]),
+                                    env))))
     return env
 
 
