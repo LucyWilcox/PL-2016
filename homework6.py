@@ -194,9 +194,10 @@ class EFor (Exp):
         return "EFor({},{},{},{})".format(str(self._init), str(self._cond), str(self._incre), str(self._exp))
 
     def eval (self,env):
-        v = self._init[0][1].eval(env)
-        env.insert(0,(self._init[0][0],VRefCell(v)))
-
+        if self._init[0] != ";":
+            for i in range(len(self._init[0])):
+                v = self._init[i][1].eval(env)
+                env.insert(0,(self._init[i][0],VRefCell(v)))
         c = self._cond.eval(env)
         while c.value:
             self._exp.eval(env)
@@ -204,6 +205,7 @@ class EFor (Exp):
             c = self._cond.eval(env)
             if c.type != "boolean":
                 raise Exception ("Runtime error: while condition not a Boolean")
+
      #change env back to what is was?? that would be nice
     
 #
@@ -422,7 +424,7 @@ def parse_imp (input):
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
     # to add to pDECL later)
-    pDECL = ( pDECL_VAR | NoMatch() )
+    pDECL = ( pDECL_VAR | NoMatch() | ";" )
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
@@ -440,7 +442,7 @@ def parse_imp (input):
 
     pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
-
+    # for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
