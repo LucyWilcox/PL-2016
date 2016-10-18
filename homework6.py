@@ -221,6 +221,7 @@ class VInteger (Value):
     
     def __init__ (self,i):
         self.value = i
+        print (self.value,"interger")
         self.type = "integer"
 
     def __str__ (self):
@@ -266,9 +267,8 @@ class VString(Value):
         self.stringContent = ""
         for eachString in self.content:
             print (eachString,"eachString")
-            self.stringContent += eachString + " "
-        if self.stringContent[-1] == " ":
-            self.stringContent[:-1]
+            if eachString.isalpha() or eachString == " ":
+                self.stringContent += eachString
         self.type = "string"
         print ("content",self.stringContent)
 
