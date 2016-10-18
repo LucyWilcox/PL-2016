@@ -259,6 +259,15 @@ class VRefCell (Value):
     def __str__ (self):
         return "<ref {}>".format(str(self.content))
 
+class VString(Value):
+
+    def __init__ (self,initial):
+        self.content = initial
+        self.type = "string"
+
+    def __str__ (self):
+        return "<string {}>".format(str(self.content))
+
 
 class VNone (Value):
 
