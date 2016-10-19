@@ -4,6 +4,15 @@
 # with S-expression syntax for expressions
 # (no recursive closures)
 #
+"""
+
+Notes: single quotes ' and double quotes " within a string 
+must be preceeded by a & so 
+"testing a &"string&"" -> "testing a "string""
+
+
+"""
+
 
 import sys
 
@@ -221,7 +230,6 @@ class VInteger (Value):
     
     def __init__ (self,i):
         self.value = i
-        print (self.value,"interger")
         self.type = "integer"
 
     def __str__ (self):
@@ -265,19 +273,41 @@ class VString(Value):
     def __init__ (self,initial):
         self.content = initial
         self.stringContent = ""
+        self.type = "string"
+        prev = None
         for eachString in self.content:
             print (eachString,"eachString")
-            if eachString.isalpha() or eachString == " ":
+            if eachString.isalpha() or eachString == " " or eachString in ["+","*","-","?","!","=","<",">","+"]:
                 self.stringContent += eachString
-        self.type = "string"
-        print ("content",self.stringContent)
+            elif prev == "&" and eachString == "\"":
+                self.stringContent += eachString
+            elif prev == "&" and eachString == "\'":
+                self.stringContent += eachString
+            prev = eachString
+        
+        # print ("content",self.stringContent)
 
     def __str__ (self):
-        return str(self.content)
+        return str(self.stringContent)
 
     def __len__(self):
-        print (len(self.stringContent),"length of content")
         return len(self.stringContent)
+
+    def substring(self, i, e):
+        return self.stringContent[i.value:e.value]
+
+    def concat(self, s):
+        return self.stringContent + s.stringContent
+
+    def startswith(self, s):
+        if self.stringContent[:len(s)] == s.stringContent:
+            return True
+        return False 
+
+    def endswith(self, s):
+        if self.stringContent[len(self) - len(s):] == s.stringContent:
+            return True
+        return False 
 
 class VNone (Value):
 
@@ -326,9 +356,28 @@ def oper_print (v1):
     return VNone()
 
 def oper_length(v1):
-    print v1
     if v1.type == "string":
         return VInteger(len(v1))
+    raise Exception ("Runtime error: variable is not a string type")
+
+def oper_substring(v1, v2, v3):
+    if v1.type == "string" and v2.type == "integer" and v3.type == "integer":
+        return VString(v1.substring(v2, v3))
+    raise Exception ("Runtime error: variable is not a string type")
+
+def oper_concat(v1, v2):
+    if v1.type == "string" and v2.type == "string":
+        return VString(v1.concat(v2))
+    raise Exception ("Runtime error: variable is not a string type")
+
+def oper_startswith(v1, v2):
+    if v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.startswith(v2))
+    raise Exception ("Runtime error: variable is not a string type")
+
+def oper_endswith(v1, v2):
+    if v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.endswith(v2))
     raise Exception ("Runtime error: variable is not a string type")
 
 
@@ -344,7 +393,7 @@ def oper_length(v1):
 ##
 # cf http://pyparsing.wikispaces.com/
 
-from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums, NoMatch
+from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums, NoMatch, QuotedString
 
 
 def initial_env_imp ():
@@ -376,6 +425,26 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x"],
                                     EPrimCall(oper_length,[EId("x")]),
                                     env))))
+    env.insert(0,
+                ("substring",
+                VRefCell(VClosure(["x", "y", "Z"],
+                                    EPrimCall(oper_substring,[EId("x"), EId("y"), EId("Z")]),
+                                    env))))
+    env.insert(0,
+                ("concat",
+                VRefCell(VClosure(["x", "y"],
+                                    EPrimCall(oper_concat,[EId("x"), EId("y")]),
+                                    env))))  
+    env.insert(0,
+                ("startswith",
+                VRefCell(VClosure(["x", "y"],
+                                    EPrimCall(oper_startswith,[EId("x"), EId("y")]),
+                                    env))))  
+    env.insert(0,
+                ("endswith",
+                VRefCell(VClosure(["x", "y"],
+                                    EPrimCall(oper_endswith,[EId("x"), EId("y")]),
+                                    env)))) 
     return env
 
 
@@ -407,17 +476,18 @@ def parse_imp (input):
     # <toplevel> ::= <decl>
     #                <stmt>
     #
-    def test(result):
-        print result,"hereeeee"
 
-    idChars = alphas+"_+*-?!=<>"
+    idChars = alphas+"_+*-?!=<>+"
+
+    QUOTE = Literal('"')
+    INTERNAL_QUOTE = QUOTE.copy().leaveWhitespace()
 
     pIDENTIFIER = Word(idChars, idChars+"0123456789")
     #### NOTE THE DIFFERENCE
     pIDENTIFIER.setParseAction(lambda result: EPrimCall(oper_deref,[EId(result[0])]))
 
     # A name is like an identifier but it does not return an EId...
-    pNAME = Word(idChars,idChars+"0123456789")
+    pNAME = Word(idChars,idChars+"0123456789")| Keyword("&\"") | Keyword("&\'")
 
     pNAMES = ZeroOrMore(pNAME)
     pNAMES.setParseAction(lambda result: [result])
