@@ -216,7 +216,19 @@ class EFor (Exp):
                 raise Exception ("Runtime error: while condition not a Boolean")
 
      #change env back to what is was?? that would be nice
-    
+  
+class EProcedure (Exp):
+    def __init__ (self,params,body):
+        self._params = params
+        self._body = body
+
+    def __str__ (self):
+        return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
+
+    def eval (self,env):
+        return VClosure(self._params,self._body,env)
+
+
 #
 # Values
 #
@@ -519,20 +531,22 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-
     pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
 
+    pSTMT = Forward()
+
+    pDECL_PROCEDURE = "procedure" + pNAME + "(" + pNAMES + ")" + pSTMT + ";"
+    pDECL_PROCEDURE.setParseAction(lambda result: (result[1], EProcedure(result[3], mkFunBody(result[3], result[5]))))
+
     # hack to get pDECL to match only PDECL_VAR (but still leave room
     # to add to pDECL later)
-    pDECL = ( pDECL_VAR | NoMatch() | ";" )
+    pDECL = ( pDECL_VAR | pDECL_PROCEDURE | NoMatch() | ";" )
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
-
-    pSTMT = Forward()
 
     pSTMT_IF_1 = "if" + pEXPR + pSTMT + "else" + pSTMT
     pSTMT_IF_1.setParseAction(lambda result: EIf(result[1],result[2],result[4]))
@@ -552,6 +566,9 @@ def parse_imp (input):
     pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
     pSTMT_UPDATE.setParseAction(lambda result: EPrimCall(oper_update,[EId(result[0]),result[2]]))
 
+    pSTMT_PROCEDURE = pEXPR + "(" + pEXPRS + ")" + ";"
+    pSTMT_PROCEDURE.setParseAction(lambda result: ECall(result[0], result[2]))
+
     pSTMTS = ZeroOrMore(pSTMT)
     pSTMTS.setParseAction(lambda result: [result])
 
@@ -562,7 +579,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE |  pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
