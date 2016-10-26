@@ -44,7 +44,7 @@ class EPrimCall (Exp):
 
     def __init__ (self,prim,es):
         self._prim = prim
-        print self._prim,"pri"
+        # print self._prim,"pri"
         self._exps = es
 
     def __str__ (self):
@@ -228,16 +228,16 @@ class EProcedure (Exp):
 
     def eval (self,env):
         return VClosure(self._params,self._body,env)
+
 class EArray(Exp):
     def __init__ (self,length):
         self._length = length
 
     def __str__ (self):
-        return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
+        return "EArray(length: {})".format(str(self._length))
 
     def eval (self,env):
         return VArray(self._length,env)
-
 
 class EObject (Exp):
     
@@ -253,21 +253,6 @@ class EObject (Exp):
         fields = [ (id,e.eval(env)) for (id,e) in self._fields]
         methods = [ (id,e.eval(env)) for (id,e) in self._methods]
         return VObject(fields,methods)
-        
-        
-class VObject (Value):
-
-    def __init__ (self,fields,methods):
-        self.type = "object"
-        self._fields = fields
-        self._methods = methods
-        self.env = fields + [ (id,v.apply([self])) for (id,v) in methods]
-         # this is the mind bending bit
-    
-    def __str__ (self):
-        return "<object {} {}>".format(",".join( id+":"+(str(v)) for (id,v) in self._fields),
-                                       ",".join( id+":"+(str(v)) for (id,v) in self._methods))
-
 
 class EWithObj (Exp):
     def __init__ (self,exp1,exp2):
@@ -282,7 +267,6 @@ class EWithObj (Exp):
         if object.type != "object":
             raise Exception("Runtime error: expected an object")
         return self._exp.eval(object.env+env)
-
 
 
 
@@ -305,7 +289,19 @@ class VInteger (Value):
     def __str__ (self):
         return str(self.value)
 
+class VObject (Value):
+
+    def __init__ (self,fields,methods):
+        self.type = "object"
+        self._fields = fields
+        self._methods = methods
+        self.env = fields + [ (id,v.apply([self])) for (id,v) in methods]
+         # this is the mind bending bit
     
+    def __str__ (self):
+        return "<object {} {}>".format(",".join( id+":"+(str(v)) for (id,v) in self._fields),
+                                       ",".join( id+":"+(str(v)) for (id,v) in self._methods))
+
 class VBoolean (Value):
     # Value representation of Booleans
     
@@ -351,40 +347,37 @@ class VString(Value):
 
     def __init__ (self,initial):
         self.content = initial
-        self.stringContent = ""
+        self.value = ""
         self.type = "string"
         prev = None
         for eachString in self.content:
-            print (eachString,"eachString")
             if eachString.isalpha() or eachString == " " or eachString in ["+","*","-","?","!","=","<",">","+"]:
-                self.stringContent += eachString
+                self.value += eachString
             elif prev == "&" and eachString == "\"":
-                self.stringContent += eachString
+                self.value += eachString
             elif prev == "&" and eachString == "\'":
-                self.stringContent += eachString
+                self.value += eachString
             prev = eachString
-        
-        # print ("content",self.stringContent)
 
     def __str__ (self):
-        return str(self.stringContent)
+        return str(self.value)
 
     def __len__(self):
-        return len(self.stringContent)
+        return len(self.value)
 
     def substring(self, i, e):
-        return self.stringContent[i.value:e.value]
+        return self.value[i.value:e.value]
 
     def concat(self, s):
-        return self.stringContent + s.stringContent
+        return self.value + s.value
 
     def startswith(self, s):
-        if self.stringContent[:len(s)] == s.stringContent:
+        if self.value[:len(s)] == s.value:
             return True
         return False 
 
     def endswith(self, s):
-        if self.stringContent[len(self) - len(s):] == s.stringContent:
+        if self.value[len(self) - len(s):] == s.value:
             return True
         return False 
 
@@ -466,7 +459,7 @@ def oper_endswith(v1, v2):
         return VBoolean(v1.endswith(v2))
     raise Exception ("Runtime error: variable is not a string type")
 
-def index(v1, v2):
+def oper_index(v1, v2):
     if v1.type == "string" and v2.type == "string":
         return VBoolean(v1.endswith(v2))
     raise Exception ("Runtime error: variable is not a string type")
@@ -540,7 +533,7 @@ def initial_env_imp ():
     env.insert(0,
                 ("index",
                 VRefCell(VClosure(["x"],
-                                    EPrimCall(index,[EId("x")]),
+                                    EPrimCall(oper_index,[EId("x")]),
                                     env)))) 
 
     return env
@@ -661,7 +654,7 @@ def parse_imp (input):
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
-    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pINTEGER + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
@@ -720,7 +713,7 @@ def shell_imp ():
 
             if result["result"] == "statement":
                 stmt = result["stmt"]
-                print stmt,"Dfddfs"
+                # print stmt,"Dfddfs"
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
 
