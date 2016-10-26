@@ -44,6 +44,7 @@ class EPrimCall (Exp):
 
     def __init__ (self,prim,es):
         self._prim = prim
+        print self._prim,"pri"
         self._exps = es
 
     def __str__ (self):
@@ -227,6 +228,15 @@ class EProcedure (Exp):
 
     def eval (self,env):
         return VClosure(self._params,self._body,env)
+class EArray(Exp):
+    def __init__ (self,length):
+        self._length = length
+
+    def __str__ (self):
+        return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
+
+    def eval (self,env):
+        return VArray(self._length,env)
 
 
 #
@@ -270,7 +280,16 @@ class VClosure (Value):
     def __str__ (self):
         return "<function [{}] {}>".format(",".join(self.params),str(self.body))
 
-    
+class VArray(Value):
+    def __init__ (self,initial,env):
+        print initial.eval(env).value,"iit*****"
+        self.content = [VNone()] * initial.eval(env).value
+        self.type = "array"
+        self.env = env
+
+    def __str__ (self):
+        return "<ref {}>".format(str(self.content))
+
 class VRefCell (Value):
 
     def __init__ (self,initial):
@@ -363,6 +382,13 @@ def oper_update (v1,v2):
         return VNone()
     raise Exception ("Runtime error: updating a non-reference value")
  
+
+def oper_update_arr(array,index,update):
+    print "came here"
+    if array.type == "ref":
+        array[index] = update
+        return VNone()
+
 def oper_print (v1):
     print v1
     return VNone()
@@ -531,10 +557,17 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
+    # pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
+    # pARRAY.setParseAction(lambda result:EValue(VArray(result[2])))
+
+    pEXPR << ( pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
+
+
+    pDECL_ARRAY = "var" + pNAME + "<" + "-" + "(" + Keyword("new-array") + pEXPR + ")" + ";"
+    pDECL_ARRAY.setParseAction(lambda result: (result[1],EArray(result[-3])))
 
     pSTMT = Forward()
 
@@ -543,10 +576,11 @@ def parse_imp (input):
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
     # to add to pDECL later)
-    pDECL = ( pDECL_VAR | pDECL_PROCEDURE | NoMatch() | ";" )
+    pDECL = ( pDECL_VAR | pDECL_ARRAY | pDECL_PROCEDURE | NoMatch() | ";" )
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
+
 
     pSTMT_IF_1 = "if" + pEXPR + pSTMT + "else" + pSTMT
     pSTMT_IF_1.setParseAction(lambda result: EIf(result[1],result[2],result[4]))
@@ -562,6 +596,9 @@ def parse_imp (input):
     # for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
+
+    pSTMT_UPDATE_ARR = pEXPR + "[" + pEXPR +"]" + "<-" + pEXPR + ";"
+    pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
     pSTMT_UPDATE.setParseAction(lambda result: EPrimCall(oper_update,[EId(result[0]),result[2]]))
@@ -579,7 +616,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
@@ -619,6 +656,7 @@ def shell_imp ():
 
             if result["result"] == "statement":
                 stmt = result["stmt"]
+                print stmt,"Dfddfs"
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
 
@@ -629,9 +667,13 @@ def shell_imp ():
                 return
 
             elif result["result"] == "declaration":
+                print "declar"
+                print result["decl"]
                 (name,expr) = result["decl"]
                 v = expr.eval(env)
+                print v,"v in shell"
                 env.insert(0,(name,VRefCell(v)))
+                print env,"env"
                 print "{} defined".format(name)
                 
                 
