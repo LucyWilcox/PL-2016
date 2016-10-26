@@ -172,6 +172,17 @@ class EDo (Exp):
             v = e.eval(env)
         return v
 
+class EWith (Exp):
+    def __init__ (self,recExp,bodyExp):
+        self._record = recExp
+        self._exp = bodyExp
+
+    def eval (self,env):
+        record = self._record.eval(env)
+        if record.type != "record":
+            raise Exception("Runtime error: expected a record")
+        return self._exp.eval(record.bindings+env)
+
 class EWhile (Exp):
 
     def __init__ (self,cond,exp):
@@ -418,6 +429,12 @@ def oper_endswith(v1, v2):
         return VBoolean(v1.endswith(v2))
     raise Exception ("Runtime error: variable is not a string type")
 
+def index(v1, v2):
+    if v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.endswith(v2))
+    raise Exception ("Runtime error: variable is not a string type")
+
+
 
 
 ############################################################
@@ -483,6 +500,12 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x", "y"],
                                     EPrimCall(oper_endswith,[EId("x"), EId("y")]),
                                     env)))) 
+    env.insert(0,
+                ("index",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(index,[EId("x")]),
+                                    env)))) 
+
     return env
 
 
@@ -557,17 +580,23 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    # pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
-    # pARRAY.setParseAction(lambda result:EValue(VArray(result[2])))
 
-    pEXPR << ( pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
+    pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
+    pARRAY.setParseAction(lambda result: EArray(result[2]))
+
+    pINDEX = Keyword("index") + pINTEGER
+    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
+
+    # pWITH = "(" + Keyword("with") + pNAME + pEXPR + ")"
+
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
 
 
-    pDECL_ARRAY = "var" + pNAME + "<" + "-" + "(" + Keyword("new-array") + pEXPR + ")" + ";"
-    pDECL_ARRAY.setParseAction(lambda result: (result[1],EArray(result[-3])))
+    # pDECL_ARRAY = "var" + pNAME + "=" +  + ";"
+    # pDECL_ARRAY.setParseAction(lambda result: (result[1],EArray(result[5])))
 
     pSTMT = Forward()
 
@@ -576,7 +605,7 @@ def parse_imp (input):
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
     # to add to pDECL later)
-    pDECL = ( pDECL_VAR | pDECL_ARRAY | pDECL_PROCEDURE | NoMatch() | ";" )
+    pDECL = ( pDECL_VAR | pDECL_PROCEDURE | NoMatch() | ";" )
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
