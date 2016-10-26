@@ -172,17 +172,6 @@ class EDo (Exp):
             v = e.eval(env)
         return v
 
-class EWith (Exp):
-    def __init__ (self,recExp,bodyExp):
-        self._record = recExp
-        self._exp = bodyExp
-
-    def eval (self,env):
-        record = self._record.eval(env)
-        if record.type != "record":
-            raise Exception("Runtime error: expected a record")
-        return self._exp.eval(record.bindings+env)
-
 class EWhile (Exp):
 
     def __init__ (self,cond,exp):
@@ -250,6 +239,54 @@ class EArray(Exp):
         return VArray(self._length,env)
 
 
+class EObject (Exp):
+    
+    def __init__ (self,fields,methods):
+        self._fields = fields
+        self._methods = methods
+        
+    def __str__ (self):
+        return "EObject([{}],[{}])".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._fields]),
+                                           ",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._methods]))
+    
+    def eval (self,env):
+        fields = [ (id,e.eval(env)) for (id,e) in self._fields]
+        methods = [ (id,e.eval(env)) for (id,e) in self._methods]
+        return VObject(fields,methods)
+        
+        
+class VObject (Value):
+
+    def __init__ (self,fields,methods):
+        self.type = "object"
+        self._fields = fields
+        self._methods = methods
+        self.env = fields + [ (id,v.apply([self])) for (id,v) in methods]
+         # this is the mind bending bit
+    
+    def __str__ (self):
+        return "<object {} {}>".format(",".join( id+":"+(str(v)) for (id,v) in self._fields),
+                                       ",".join( id+":"+(str(v)) for (id,v) in self._methods))
+
+
+class EWithObj (Exp):
+    def __init__ (self,exp1,exp2):
+        self._object = exp1
+        self._exp = exp2
+        
+    def __str__ (self):
+        return "EWithObj({},{})".format(str(self._object),str(self._exp))
+
+    def eval (self,env):
+        object = self._object.eval(env)
+        if object.type != "object":
+            raise Exception("Runtime error: expected an object")
+        return self._exp.eval(object.env+env)
+
+
+
+
+
 #
 # Values
 #
@@ -294,7 +331,7 @@ class VClosure (Value):
 class VArray(Value):
     def __init__ (self,initial,env):
         print initial.eval(env).value,"iit*****"
-        self.content = [None] * initial.eval(env).value
+        self.content = [VNone()] * initial.eval(env).value
         self.type = "array"
         self.env = env
 
@@ -580,7 +617,6 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
 
@@ -589,14 +625,13 @@ def parse_imp (input):
 
     # pWITH = "(" + Keyword("with") + pNAME + pEXPR + ")"
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL)
+    pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
+    pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
+
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL | pWITH)
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
-
-
-    # pDECL_ARRAY = "var" + pNAME + "=" +  + ";"
-    # pDECL_ARRAY.setParseAction(lambda result: (result[1],EArray(result[5])))
 
     pSTMT = Forward()
 
