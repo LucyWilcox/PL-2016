@@ -283,7 +283,7 @@ class VClosure (Value):
 class VArray(Value):
     def __init__ (self,initial,env):
         print initial.eval(env).value,"iit*****"
-        self.content = [VNone()] * initial.eval(env).value
+        self.content = [None] * initial.eval(env).value
         self.type = "array"
         self.env = env
 
@@ -386,7 +386,7 @@ def oper_update (v1,v2):
 def oper_update_arr(array,index,update):
     print "came here"
     if array.type == "ref":
-        array[index] = update
+        array.content.content[index.value] = update.value
         return VNone()
 
 def oper_print (v1):
@@ -597,7 +597,7 @@ def parse_imp (input):
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
-    pSTMT_UPDATE_ARR = pEXPR + "[" + pEXPR +"]" + "<-" + pEXPR + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pINTEGER + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
