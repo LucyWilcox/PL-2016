@@ -10,7 +10,48 @@ Notes: single quotes ' and double quotes " within a string
 must be preceeded by a & so 
 "testing a &"string&"" -> "testing a "string""
 
+Q1 tests:
 
+var not = (function (x) (if x false true));
+for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+
+Q2 tests:
+
+var s = "string &"test&'";
+print s; # string "test'
+print (length s); # 13
+print (substring s 1 4); # tri
+print (substring s 1 11); # tring "tes
+var m = (substring s 0 4);
+print m; # stri
+print (concat m s); # stristring "test'
+print (startswith s m); # true
+print (startswith m s); # false
+var t1 = "ris";
+print (startswith s t1); # false
+var t2 = "est&'";
+print (endswith s t2); # true
+print (endswith s t1); # false
+var yn = "YES no";
+print (lower yn); # yes no
+print (upper yn); # YES NO
+
+Q3 tests:
+procedure foo (x y) print x;
+foo(1 2); # 1
+procedure bar (x y z) print (+ x (+ y z));
+bar (1 2 5); #8
+bar (1 2 (+ 5 1)) #9
 """
 
 
@@ -205,7 +246,8 @@ class EFor (Exp):
 
     def eval (self,env):
         if self._init[0] != ";":
-            for i in range(len(self._init[0])):
+            for i in range(len(self._init[0]) - 1):
+                print i, self._init[i][1]
                 v = self._init[i][1].eval(env)
                 env.insert(0,(self._init[i][0],VRefCell(v)))
         c = self._cond.eval(env)
@@ -238,6 +280,7 @@ class EArray(Exp):
 
     def eval (self,env):
         return VArray(self._length,env)
+
 
 class EObject (Exp):
     
@@ -330,9 +373,19 @@ class VArray(Value):
         self.content = [VNone()] * initial.eval(env).value
         self.type = "array"
         self.env = env
+        self.methods = [
+                ("index",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(self.oper_index,[EId("x")]),
+                                    self))) ]
 
     def __str__ (self):
         return "<ref {}>".format(str(self.content))
+
+    def oper_index(self, i):
+        if i.type == "integer":
+            return self.content[i.value]
+        raise Exception ("Runtime error: variable is not a integer type")
 
 class VRefCell (Value):
 
@@ -346,17 +399,25 @@ class VRefCell (Value):
 class VString(Value):
 
     def __init__ (self,initial):
-        self.content = initial
+        self.content = list(initial) + ["&"]
         self.value = ""
         self.type = "string"
         prev = None
-        for eachString in self.content:
+        for i, eachString in enumerate(self.content):
             if eachString.isalpha() or eachString == " " or eachString in ["+","*","-","?","!","=","<",">","+"]:
                 self.value += eachString
             elif prev == "&" and eachString == "\"":
+                self.value = self.value[:-1]
                 self.value += eachString
+                self.content.pop(i+3)
+                self.content.pop(i+2)
+                self.content.pop(i+1)
             elif prev == "&" and eachString == "\'":
+                self.value = self.value[:-1]
                 self.value += eachString
+                self.content.pop(i+3)
+                self.content.pop(i+2)
+                self.content.pop(i+1)
             prev = eachString
 
     def __str__ (self):
@@ -366,10 +427,14 @@ class VString(Value):
         return len(self.value)
 
     def substring(self, i, e):
-        return self.value[i.value:e.value]
+        sub = self.value[i.value:e.value]
+        sub = sub.replace("\"", " &\"   ").replace("\'", " &\'   ")
+        return sub
 
     def concat(self, s):
-        return self.value + s.value
+        conc = self.value + s.value
+        conc = conc.replace("\"", " &\"   ").replace("\'", " &\'   ")
+        return conc
 
     def startswith(self, s):
         if self.value[:len(s)] == s.value:
@@ -380,6 +445,16 @@ class VString(Value):
         if self.value[len(self) - len(s):] == s.value:
             return True
         return False 
+
+    def lower(self):
+        lower = self.value.lower()
+        lower.replace("\"", " &\"   ").replace("\'", " &\'   ")
+        return lower
+
+    def upper(self):
+        upper = self.value.upper()
+        upper.replace("\"", " &\"   ").replace("\'", " &\'   ")
+        return upper
 
 class VNone (Value):
 
@@ -423,7 +498,6 @@ def oper_update (v1,v2):
         return VNone()
     raise Exception ("Runtime error: updating a non-reference value")
  
-
 def oper_update_arr(array,index,update):
     print "came here"
     if array.type == "ref":
@@ -459,11 +533,15 @@ def oper_endswith(v1, v2):
         return VBoolean(v1.endswith(v2))
     raise Exception ("Runtime error: variable is not a string type")
 
-def oper_index(v1, v2):
-    if v1.type == "string" and v2.type == "string":
-        return VBoolean(v1.endswith(v2))
+def oper_lower(v1):
+    if v1.type == "string":
+        return VString(v1.lower())
     raise Exception ("Runtime error: variable is not a string type")
 
+def oper_upper(v1):
+    if v1.type == "string":
+        return VString(v1.upper())
+    raise Exception ("Runtime error: variable is not a string type")
 
 
 
@@ -478,7 +556,7 @@ def oper_index(v1, v2):
 ##
 # cf http://pyparsing.wikispaces.com/
 
-from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums, NoMatch, QuotedString
+from pyparsing import Word, Literal, ZeroOrMore, OneOrMore, Keyword, Forward, alphas, alphanums, NoMatch, QuotedString, Combine
 
 
 def initial_env_imp ():
@@ -531,13 +609,17 @@ def initial_env_imp ():
                                     EPrimCall(oper_endswith,[EId("x"), EId("y")]),
                                     env)))) 
     env.insert(0,
-                ("index",
+                ("lower",
                 VRefCell(VClosure(["x"],
-                                    EPrimCall(oper_index,[EId("x")]),
+                                    EPrimCall(oper_lower,[EId("x")]),
+                                    env)))) 
+    env.insert(0,
+                ("upper",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(oper_upper,[EId("x")]),
                                     env)))) 
 
     return env
-
 
 
 
@@ -578,7 +660,7 @@ def parse_imp (input):
     pIDENTIFIER.setParseAction(lambda result: EPrimCall(oper_deref,[EId(result[0])]))
 
     # A name is like an identifier but it does not return an EId...
-    pNAME = Word(idChars,idChars+"0123456789")| Keyword("&\"") | Keyword("&\'")
+    pNAME = Word(idChars,idChars+"0123456789") #| Keyword("&\"") | Keyword("&\'")
 
     pNAMES = ZeroOrMore(pNAME)
     pNAMES.setParseAction(lambda result: [result])
@@ -586,8 +668,9 @@ def parse_imp (input):
     pINTEGER = Word("0123456789")
     pINTEGER.setParseAction(lambda result: EValue(VInteger(int(result[0]))))
 
-    pSTRING = Literal('"') + pNAMES + Literal('"')
-    pSTRING.setParseAction(lambda result: EValue(VString(str(result[1]))))
+    QUOTE = Literal("&\"") | Literal("&\'") 
+    pSTRING = Literal('"') + ZeroOrMore(Combine( Word(idChars+"0123456789'"+" ") | QUOTE)) + Literal('"')
+    pSTRING.setParseAction(lambda result: EValue(VString(str(result[1:-1]))))
 
     pBOOLEAN = Keyword("true") | Keyword("false")
     pBOOLEAN.setParseAction(lambda result: EValue(VBoolean(result[0]=="true")))
@@ -621,14 +704,14 @@ def parse_imp (input):
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL | pWITH)
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
 
     pSTMT = Forward()
 
-    pDECL_PROCEDURE = "procedure" + pNAME + "(" + pNAMES + ")" + pSTMT + ";"
+    pDECL_PROCEDURE = "procedure" + pNAME + "(" + pNAMES + ")" + pSTMT
     pDECL_PROCEDURE.setParseAction(lambda result: (result[1], EProcedure(result[3], mkFunBody(result[3], result[5]))))
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
@@ -650,7 +733,7 @@ def parse_imp (input):
 
     pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
-    # for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
+
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
