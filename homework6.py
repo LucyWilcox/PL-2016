@@ -380,7 +380,17 @@ class VArray(Value):
                 ("index",
                 VRefCell(VClosure(["x"],
                                     EPrimCall(self.oper_index,[EId("x")]),
-                                    self))) ]
+                                    self))),
+                ("length",
+                VRefCell(VClosure([],
+                                    EPrimCall(self.oper_length,[]),
+                                    self))),
+                ("map",
+                VRefCell(VClosure([["x"]],
+                                    EPrimCall(self.oper_length,[EId("x")]),
+                                    self)))
+
+                ]
 
     def __str__ (self):
         return "<ref {}>".format(str(self.content))
@@ -390,6 +400,14 @@ class VArray(Value):
         if i.type == "integer":
             return self.content[i.value]
         raise Exception ("Runtime error: variable is not a integer type")
+
+    def oper_length(self):
+        return len(self.content)
+
+    def oper_map(self,function):
+        if function.type=="function":
+            return self.content.apply(function)
+        raise Exception ("Runtime error: Not a function")
 
 class VRefCell (Value):
 
