@@ -166,10 +166,11 @@ class ECall (Exp):
         args = [ e.eval(env) for e in self._args]
         if len(args) != len(f.params):
             raise Exception("Runtime error: argument # mismatch in call")
-        if f.env.type == "array":
-            new_env = zip(f.params,args) + f.env.methods
+        if hasattr(f.env, "type"):
+            if f.env.type == "array":
+                new_env = zip(f.params,args) + f.env.methods
         else:
-            new_env = zip(f.params,args) + f.env #ISSUE
+            new_env = zip(f.params,args) + f.env
         return f.body.eval(new_env)
 
 
@@ -250,7 +251,6 @@ class EFor (Exp):
     def eval (self,env):
         if self._init[0] != ";":
             for i in range(len(self._init[0]) - 1):
-                print i, self._init[i][1]
                 v = self._init[i][1].eval(env)
                 env.insert(0,(self._init[i][0],VRefCell(v)))
         c = self._cond.eval(env)
@@ -372,7 +372,6 @@ class VClosure (Value):
 
 class VArray(Value):
     def __init__ (self,initial,env):
-        print initial.eval(env).value,"iit*****"
         self.content = [VNone()] * initial.eval(env).value
         self.type = "array"
         self.env = env
@@ -386,9 +385,15 @@ class VArray(Value):
         return "<ref {}>".format(str(self.content))
 
     def oper_index(self, i):
-        print "here"
         if i.type == "integer":
-            return self.content[i.value]
+            if isinstance(self.content[i.value], int):
+                return VInteger(self.content[i.value])
+            elif isinstance(self.content[i.value], str):
+                return VString(self.content[i.value])
+            elif isinstance(self.content[i.value], bool):
+                return VBoolean(self.content[i.value])
+            else:
+                raise Exception ("Runtime error: variable is not a recongized type")
         raise Exception ("Runtime error: variable is not a integer type")
 
 class VRefCell (Value):
@@ -503,7 +508,6 @@ def oper_update (v1,v2):
     raise Exception ("Runtime error: updating a non-reference value")
  
 def oper_update_arr(array,index,update):
-    print "came here"
     if array.type == "ref":
         array.content.content[index.value] = update.value
         return VNone()
