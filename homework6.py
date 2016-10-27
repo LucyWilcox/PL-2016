@@ -166,7 +166,10 @@ class ECall (Exp):
         args = [ e.eval(env) for e in self._args]
         if len(args) != len(f.params):
             raise Exception("Runtime error: argument # mismatch in call")
-        new_env = zip(f.params,args) + f.env
+        if f.env.type == "array":
+            new_env = zip(f.params,args) + f.env.methods
+        else:
+            new_env = zip(f.params,args) + f.env #ISSUE
         return f.body.eval(new_env)
 
 
@@ -307,10 +310,10 @@ class EWithObj (Exp):
 
     def eval (self,env):
         object = self._object.eval(env)
-        if object.type != "object":
-            raise Exception("Runtime error: expected an object")
-        return self._exp.eval(object.env+env)
-
+        # if object.type != "object":
+        #     raise Exception("Runtime error: expected an object")
+        all_env = object.env+env+object.methods
+        return self._exp.eval(all_env)
 
 
 
@@ -383,6 +386,7 @@ class VArray(Value):
         return "<ref {}>".format(str(self.content))
 
     def oper_index(self, i):
+        print "here"
         if i.type == "integer":
             return self.content[i.value]
         raise Exception ("Runtime error: variable is not a integer type")
