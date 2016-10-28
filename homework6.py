@@ -383,7 +383,7 @@ class VArray(Value):
                                     EPrimCall(self.oper_length,[]),
                                     self))),
                 ("map",
-                VRefCell(VClosure([["x"]],
+                VRefCell(VClosure(["x"],
                                     EPrimCall(self.oper_map,[EId("x")]),
                                     self)))
 
@@ -394,23 +394,16 @@ class VArray(Value):
 
     def oper_index(self, i):
         if i.type == "integer":
-            if isinstance(self.content[i.value], int):
-                return VInteger(self.content[i.value])
-            elif isinstance(self.content[i.value], str):
-                return VString(self.content[i.value])
-            elif isinstance(self.content[i.value], bool):
-                return VBoolean(self.content[i.value])
-            else:
-                raise Exception ("Runtime error: variable is not a recongized type")
+            return self.content[i.value]
         raise Exception ("Runtime error: variable is not a integer type")
 
     def oper_length(self):
         return len(self.content)
 
     def oper_map(self,function):
-        print function
-        if function.type=="function":
-            return map(self.content,function)
+        for i, v in enumerate(self.content):
+            self.content[i] = function.body.eval([(function.params[0], v)] + function.env)
+        return self
         raise Exception ("Runtime error: Not a function")
 
 class VRefCell (Value):
@@ -526,7 +519,12 @@ def oper_update (v1,v2):
  
 def oper_update_arr(array,index,update):
     if array.type == "ref":
-        array.content.content[index.value] = update.value
+        if isinstance(update.value, int):
+            array.content.content[index.value] = VInteger(update.value)
+        if isinstance(update.value, str):
+            array.content.content[index.value] = VString(update.value)
+        if isinstance(update.value, bool):
+            array.content.content[index.value] = VBoolean(update.value)
         return VNone()
 
 def oper_print (v1):
