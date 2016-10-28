@@ -721,9 +721,30 @@ def parse_imp (input):
     def mkFunBody (params,body):
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
         return ELet(bindings,body)
+    def letToFun(result):
+        func = result[5]
+        binds = result[3]
+        params = []
+        vals = []
+        for p, v in binds:
+            params.append(p)
+            vals.append(v)
+        return ECall(EFunction(params, func), vals)
+
 
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
+
+
+
+    pBINDING = "(" + pNAME + pEXPR + ")"
+    pBINDING.setParseAction(lambda result: (result[1],result[2]))
+
+    pBINDINGS = OneOrMore(pBINDING)
+    pBINDINGS.setParseAction(lambda result: [ result ])
+    
+    pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
+    pLET.setParseAction(letToFun)
 
     pCALL = "(" + pEXPR + pEXPRS + ")"
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
@@ -739,7 +760,7 @@ def parse_imp (input):
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF | pFUN | pCALL )
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -822,16 +843,23 @@ def shell_imp ():
     print "#quit to quit, #abs to see abstract representation"
     env = initial_env_imp()
 
-        
     while True:
         inp = raw_input("imp> ")
 
+        if inp.startswith("#multi"):
+            # multi-line statement
+            line = ""
+            inp = raw_input(".... ")
+            while inp:
+                line += inp + " "
+                inp = raw_input(".... ")
+            inp = line
+            
         try:
             result = parse_imp(inp)
 
             if result["result"] == "statement":
                 stmt = result["stmt"]
-                # print stmt,"Dfddfs"
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
 
@@ -842,17 +870,12 @@ def shell_imp ():
                 return
 
             elif result["result"] == "declaration":
-                print "declar"
-                print result["decl"]
                 (name,expr) = result["decl"]
                 v = expr.eval(env)
-                print v,"v in shell"
                 env.insert(0,(name,VRefCell(v)))
-                print env,"env"
                 print "{} defined".format(name)
-                
-                
+                    
         except Exception as e:
             print "Exception: {}".format(e)
 
-shell_imp()
+shell_imp ()
