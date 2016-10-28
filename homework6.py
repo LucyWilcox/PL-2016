@@ -385,8 +385,11 @@ class VArray(Value):
                 ("map",
                 VRefCell(VClosure(["x"],
                                     EPrimCall(self.oper_map,[EId("x")]),
+                                    self))),
+                ("swap",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(self.oper_swap,[EId("x"),EId("y")]),
                                     self)))
-
                 ]
 
     def __str__ (self):
@@ -400,11 +403,20 @@ class VArray(Value):
     def oper_length(self):
         return len(self.content)
 
+    def oper_swap(self,i1,i2):
+        if i1.type == "integer" and i2.type == "integer":
+            temp = self.content[i1.value]
+            self.content[i1.value] = self.content[i2.value]
+            self.content[i2.value] = temp
+            return VNone()
+        raise Exception ("Runtime error: variable is not a integer type")
+
+
     def oper_map(self,function):
         for i, v in enumerate(self.content):
             self.content[i] = function.body.eval([(function.params[0], v)] + function.env)
         return self
-        raise Exception ("Runtime error: Not a function")
+
 
 class VRefCell (Value):
 
