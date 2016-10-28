@@ -209,7 +209,6 @@ class ECall (Exp):
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
-        print args,f.params
         if len(args) != len(f.params):
             raise Exception("Runtime error: argument # mismatch in call")
         if hasattr(f.env, "type"):
@@ -633,6 +632,9 @@ def oper_random(first,last):
         return VInteger(random.randrange(last.value - first.value + 1))
     raise Exception ("Runtime error: variable is not a integer type")
 
+def oper_lessEqual(v1,v2):
+    if v1.type == "integer" and v2.type == "integer":
+        return VBoolean(v1.value <= v2.value)
 
 ############################################################
 # IMPERATIVE SURFACE SYNTAX
@@ -712,7 +714,11 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(oper_random,[EId("x"),EId("y")]),
                                     env)))) 
-
+    env.insert(0,
+                ("lessEqual",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(oper_lessEqual,[EId("x"),EId("y")]),
+                                    env)))) 
 
     return env
 
