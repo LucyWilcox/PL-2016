@@ -53,8 +53,6 @@ procedure bar (x y z) print (+ x (+ y z));
 bar (1 2 5); #8
 bar (1 2 (+ 5 1)) #9
 """
-
-
 import sys
 
 #
@@ -313,7 +311,7 @@ class EWithObj (Exp):
         object = self._object.eval(env)
         # if object.type != "object":
         #     raise Exception("Runtime error: expected an object")
-        all_env = object.env+env+object.methods
+        all_env =object.methods+object.env+env
         return self._exp.eval(all_env)
 
 
@@ -382,8 +380,8 @@ class VArray(Value):
                                     EPrimCall(self.oper_index,[EId("x")]),
                                     self))),
                 ("length",
-                VRefCell(VClosure(["x"],
-                                    EPrimCall(self.oper_length,[EId("x")]),
+                VRefCell(VClosure([],
+                                    EPrimCall(self.oper_length,[]),
                                     self))),
                 ("map",
                 VRefCell(VClosure([["x"]],
@@ -407,12 +405,13 @@ class VArray(Value):
                 raise Exception ("Runtime error: variable is not a recongized type")
         raise Exception ("Runtime error: variable is not a integer type")
 
-    def oper_length(self,v1):
+    def oper_length(self):
         return len(self.content)
 
     def oper_map(self,function):
+        print function
         if function.type=="function":
-            return self.content.apply(function)
+            return map(self.content,function)
         raise Exception ("Runtime error: Not a function")
 
 class VRefCell (Value):
