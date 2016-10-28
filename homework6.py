@@ -4,6 +4,7 @@
 # with S-expression syntax for expressions
 # (no recursive closures)
 #
+import random
 """
 
 Notes: single quotes ' and double quotes " within a string 
@@ -390,6 +391,10 @@ class VArray(Value):
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(self.oper_swap,[EId("x"),EId("y")]),
                                     self)))
+
+
+
+
                 ]
 
     def __str__ (self):
@@ -578,6 +583,10 @@ def oper_upper(v1):
         return VString(v1.upper())
     raise Exception ("Runtime error: variable is not a string type")
 
+def oper_random(first,last):
+    if first.type == "integer" and last.type == "integer":
+        return VInteger(random.randrange(last.value - first.value + 1))
+    raise Exception ("Runtime error: variable is not a integer type")
 
 
 ############################################################
@@ -653,6 +662,12 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x"],
                                     EPrimCall(oper_upper,[EId("x")]),
                                     env)))) 
+    env.insert(0,
+                ("random",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(oper_random,[EId("x"),EId("y")]),
+                                    env)))) 
+
 
     return env
 
@@ -742,7 +757,7 @@ def parse_imp (input):
 
     pBINDINGS = OneOrMore(pBINDING)
     pBINDINGS.setParseAction(lambda result: [ result ])
-    
+
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
