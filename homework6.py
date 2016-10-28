@@ -85,7 +85,6 @@ class EPrimCall (Exp):
 
     def __init__ (self,prim,es):
         self._prim = prim
-        # print self._prim,"pri"
         self._exps = es
 
     def __str__ (self):
