@@ -5,15 +5,29 @@
 # (no recursive closures)
 #
 """
+Names:
+Lucy Wilcox and Xiaofan Wu
 
-Notes: single quotes ' and double quotes " within a string 
-must be preceeded by a & so 
-"testing a &"string&"" -> "testing a "string""
+Emails:
+
+
+Remarks:
+
+
+Q1 info:
+for loop should be written as:
+
+for (statement [declare var]) (expression [condition]); (statment [increment]) (statement)
+
+there will be semicolons between all sections, but most of the 
+time these semicolons are not shown as they are part of the
+statement.
+
+Examples below.
 
 Q1 tests:
-
 var not = (function (x) (if x false true));
-for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
+for var x = 10; (not (zero? x)); x <- (- x 1); print x; 
 10
 9
 8
@@ -25,8 +39,13 @@ for var x = 10; (not (zero? x)); x <- (- x 1); { print x; }
 2
 1
 
-Q2 tests:
 
+Q2 info: 
+Single quotes ' and double quotes " within a string 
+must be preceeded by a & so 
+"testing a &"string&"" -> "testing a "string""
+
+Q2 tests:
 var s = "string &"test&'";
 print s; # string "test'
 print (length s); # 13
@@ -46,12 +65,40 @@ var yn = "YES no";
 print (lower yn); # yes no
 print (upper yn); # YES NO
 
+Q3 info:
+Procedures are added to the environment as closures.
+When a procedure is called, and ECall is made with the
+procedure name and expressions.
+
 Q3 tests:
 procedure foo (x y) print x;
 foo(1 2); # 1
 procedure bar (x y z) print (+ x (+ y z));
 bar (1 2 5); #8
 bar (1 2 (+ 5 1)) #9
+
+Q4 info:
+And array initializes to VNones and is done by calling EArray
+VArray contains the type, env, content, and methods that can only
+be called on the class. It has also had these methods as actual methods
+in the class. When with is called it includes these methods in the env.
+When elements are added to the array, a function in the initial env, not
+in the VArray env, they are made to be the proper type.
+
+Q4 tests:
+var a = (new-array 2);
+print (with a (length)); #2
+a[0] <- 1;
+a[1] <- 2;
+print (with a (index 1)); #2
+var addone = (function (x) (+ 1 x));
+print (with a (map addone));
+print (with a (index 1)); # 3
+var t = (with a (map addone));
+print (with t (index 1)); #4
+
+TODO ADD C
+
 """
 import sys
 
@@ -258,8 +305,6 @@ class EFor (Exp):
             c = self._cond.eval(env)
             if c.type != "boolean":
                 raise Exception ("Runtime error: while condition not a Boolean")
-
-     #change env back to what is was?? that would be nice
   
 class EProcedure (Exp):
     def __init__ (self,params,body):
