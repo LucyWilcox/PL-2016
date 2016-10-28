@@ -164,6 +164,7 @@ class ECall (Exp):
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
+        print args,f.params
         if len(args) != len(f.params):
             raise Exception("Runtime error: argument # mismatch in call")
         if hasattr(f.env, "type"):
@@ -381,12 +382,12 @@ class VArray(Value):
                                     EPrimCall(self.oper_index,[EId("x")]),
                                     self))),
                 ("length",
-                VRefCell(VClosure([],
-                                    EPrimCall(self.oper_length,[]),
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(self.oper_length,[EId("x")]),
                                     self))),
                 ("map",
                 VRefCell(VClosure([["x"]],
-                                    EPrimCall(self.oper_length,[EId("x")]),
+                                    EPrimCall(self.oper_map,[EId("x")]),
                                     self)))
 
                 ]
@@ -406,7 +407,7 @@ class VArray(Value):
                 raise Exception ("Runtime error: variable is not a recongized type")
         raise Exception ("Runtime error: variable is not a integer type")
 
-    def oper_length(self):
+    def oper_length(self,v1):
         return len(self.content)
 
     def oper_map(self,function):
