@@ -421,7 +421,7 @@ class VArray(Value):
 
 
     def oper_map(self,function):
-        print function
+        print function,"came in to map"
         if function.type=="function":
             return map(self.content,function)
         raise Exception ("Runtime error: Not a function")
