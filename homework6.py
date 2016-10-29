@@ -107,23 +107,25 @@ C
 
 procedure swapPivot (a f l) print (with a (swap (+ f (random f l)) l));
 procedure swap (a f l) (with a (swap f l));
-procedure forLoop(a f l) for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))) {swap(a f l); f <- (+ f 1);};
-
- .... procedure partition (a f l) {
- .... swapPivot (a f l);
- .... forLoop(a f l);
-    swap(a f l);}
+procedure forLoop(a f l) for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))) {swap(a f l); pivot <- (+ 1 pivot);};
 
  .... procedure quickSortDiv (a f l) if (<= f (- l 1)) {
- .... partition(a f l);
- .... quickSortDiv(a f (- l 1));
-.... quickSortDiv (a (+ f 1) l);
- .... }
+      var pivot = f;
+      for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l)))
+      {
+      swap(a f l); 
+      pivot <- (+ 1 pivot);
+      }
+      swap (a pivot l);
+ .... 
+ .... quickSortDiv(a f (- pivot 1));
+.... quickSortDiv (a (+ pivot 1) l);
+ .... };
  .... 
 
 procedure quicksort (a) quickSortDiv(a 0 ( - (with a (length)) 1)); 
-
-
+procedure bar (x y z) print (+ x (+ y z));
+procedure test (a) print (- (with a (length)) 1);
 """
 import sys
 
@@ -471,7 +473,7 @@ class VArray(Value):
         raise Exception ("Runtime error: variable is not a integer type")
 
     def oper_length(self):
-        return len(self.content)
+        return VInteger(len(self.content))
 
     def oper_swap(self,i1,i2):
         if i1.type == "integer" and i2.type == "integer":
@@ -610,7 +612,10 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
-    print v1
+    print v1.content
+    for i in v1.content:
+        if i.type != "none":
+            print i.value
     return VNone()
 
 def oper_length(v1):
