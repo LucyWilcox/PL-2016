@@ -18,7 +18,7 @@ Remarks:
 Q1 info:
 for loop should be written as:
 
-for (statement [declare var]) (expression [condition]); (statment [increment]) (statement)
+for statement expression; statment statement
 
 there will be semicolons between all sections, but most of the 
 time these semicolons are not shown as they are part of the
@@ -436,10 +436,6 @@ class VArray(Value):
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(self.oper_swap,[EId("x"),EId("y")]),
                                     self)))
-
-
-
-
                 ]
 
     def __str__ (self):
