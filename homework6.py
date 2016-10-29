@@ -78,6 +78,7 @@ foo(1 2); # 1
 procedure bar (x y z) print (+ x (+ y z));
 bar (1 2 5); #8
 bar (1 2 (+ 5 1)) #9
+procedure addone (x) x <- (+ x 1);
 
 Q4 info:
 And array initializes to VNones and is done by calling EArray
@@ -100,6 +101,28 @@ var t = (with a (map addone));
 print (with t (index 1)); #4
 
 TODO ADD C
+
+
+C
+
+procedure swapPivot (a f l) print (with a (swap (+ f (random f l)) l));
+procedure swap (a f l) (with a (swap f l));
+procedure forLoop(a f l) for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))) {swap(a f l); f <- (+ f 1);};
+
+ .... procedure partition (a f l) {
+ .... swapPivot (a f l);
+ .... forLoop(a f l);
+    swap(a f l);}
+
+ .... procedure quickSortDiv (a f l) if (<= f (- l 1)) {
+ .... partition(a f l);
+ .... quickSortDiv(a f (- l 1));
+.... quickSortDiv (a (+ f 1) l);
+ .... }
+ .... 
+
+procedure quicksort (a) quickSortDiv(a 0 ( - (with a (length)) 1)); 
+
 
 """
 import sys
@@ -158,6 +181,7 @@ class EIf (Exp):
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
+            print self._then
             return self._then.eval(env)
         else:
             return self._else.eval(env)
@@ -641,6 +665,10 @@ def oper_greater(v1,v2):
     if v1.type == "integer" and v2.type == "integer":
         return VBoolean(v1.value > v2.value)
 
+def oper_equal(v1,v2):
+    if v1.type == "integer" and v2.type == "integer":
+        return VBoolean(v1.value != v2.value)
+
 ############################################################
 # IMPERATIVE SURFACE SYNTAX
 #
@@ -725,6 +753,7 @@ def initial_env_imp ():
                                     EPrimCall(oper_lessEqual,[EId("x"),EId("y")]),
                                     env)))) 
     env.insert(0,
+
                 ("<",
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(oper_less,[EId("x"),EId("y")]),
@@ -734,6 +763,13 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(oper_greater,[EId("x"),EId("y")]),
                                     env))))     
+    env.insert(0,
+                ("!=",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(oper_equal,[EId("x"),EId("y")]),
+                                    env))))
+
+
 
     return env
 
@@ -896,7 +932,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pWITH | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
