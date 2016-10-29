@@ -10,7 +10,8 @@ Names:
 Lucy Wilcox and Xiaofan Wu
 
 Emails:
-
+lucy.wilcox@students.olin.edu
+wuxiaofan1996@gmail.com
 
 Remarks:
 
