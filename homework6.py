@@ -100,32 +100,24 @@ print (with a (index 1)); # 3
 var t = (with a (map addone));
 print (with t (index 1)); #4
 
-TODO ADD C
-
-
-C
-
+c)
 procedure swapPivot (a f l) print (with a (swap (+ f (random f l)) l));
 procedure swap (a f l) (with a (swap f l));
-procedure forLoop(a f l) for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))) {swap(a f l); pivot <- (+ 1 pivot);};
 
- .... procedure quickSortDiv (a f l) if (<= f (- l 1)) {
+procedure quickSortDiv (a f l) if (<= f (- l 1)) {
+      swapPivot(a f l);
       var pivot = f;
-      for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l)))
-      {
-      swap(a f l); 
-      pivot <- (+ 1 pivot);
-      }
+      for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))){
+      swap(a f i); 
+      pivot <- (+ 1 pivot);}
       swap (a pivot l);
  .... 
  .... quickSortDiv(a f (- pivot 1));
-.... quickSortDiv (a (+ pivot 1) l);
- .... };
+.... quickSortDiv (a (+ pivot 1) l);};
  .... 
 
 procedure quicksort (a) quickSortDiv(a 0 ( - (with a (length)) 1)); 
-procedure bar (x y z) print (+ x (+ y z));
-procedure test (a) print (- (with a (length)) 1);
+
 """
 import sys
 
@@ -183,7 +175,6 @@ class EIf (Exp):
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
-            print self._then
             return self._then.eval(env)
         else:
             return self._else.eval(env)
