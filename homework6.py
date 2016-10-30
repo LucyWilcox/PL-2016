@@ -100,10 +100,6 @@ print (with a (index 1)); # 3
 var t = (with a (map addone));
 print (with t (index 1)); #4
 
-TODO ADD C
-
-
-C
 
 procedure swapPivot (a f l) print (with a (swap (+ f (random f l)) l));
 procedure swap (a f l) (with a (swap f l));
@@ -183,7 +179,6 @@ class EIf (Exp):
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
-            print self._then
             return self._then.eval(env)
         else:
             return self._else.eval(env)
@@ -612,10 +607,11 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
-    print v1.content
-    for i in v1.content:
-        if i.type != "none":
-            print i.value
+    print v1
+    # print v1.content
+    # for i in v1.content:
+    #     if i.type != "none":
+    #         print i.value
     return VNone()
 
 def oper_length(v1):
@@ -877,8 +873,6 @@ def parse_imp (input):
     pINDEX = Keyword("index") + pINTEGER
     pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
 
-    # pWITH = "(" + Keyword("with") + pNAME + pEXPR + ")"
-
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
@@ -915,10 +909,7 @@ def parse_imp (input):
     pSTMT_PRINT = "print" + pEXPR + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
-    # pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
-    # pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
-
-    pSTMT_UPDATE_ARR = pNAME + "[" + pEXPR +"]" + "<-" + pEXPR + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
@@ -1004,48 +995,3 @@ def shell_imp ():
             print "Exception: {}".format(e)
 
 shell_imp ()
-
-def new_shell_imp ():
-    # A simple shell
-    # Repeatedly read a line of input, parse it, and evaluate the result
-
-    print "Homework 6 - Imp Language"
-    print "#quit to quit, #abs to see abstract representation"
-    env = initial_env_imp()
-
-    while True:
-        inp = raw_input("imp> ")
-
-        if inp.startswith("#multi"):
-            # multi-line statement
-            line = ""
-            inp = raw_input(".... ")
-            while inp:
-                line += inp + " "
-                inp = raw_input(".... ")
-            inp = line
-            
-        try:
-            result = parse_imp(inp)
-
-            if result["result"] == "statement":
-                stmt = result["stmt"]
-                # print "Abstract representation:", exp
-                v = stmt.eval(env)
-
-            elif result["result"] == "abstract":
-                print result["stmt"]
-
-            elif result["result"] == "quit":
-                return
-
-            elif result["result"] == "declaration":
-                (name,expr) = result["decl"]
-                v = expr.eval(env)
-                env.insert(0,(name,VRefCell(v)))
-                print "{} defined".format(name)
-                    
-        except Exception as e:
-            print "Exception: {}".format(e)
-
-# new_shell_imp()
