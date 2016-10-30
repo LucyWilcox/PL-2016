@@ -603,10 +603,10 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
-    print v1.content
-    for i in v1.content:
-        if i.type != "none":
-            print i.value
+    print v1
+    # for i in v1.content:
+    #     if i.type != "none":
+    #         print i.value
     return VNone()
 
 def oper_length(v1):
