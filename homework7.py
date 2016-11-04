@@ -563,7 +563,11 @@ class VNone (Value):
 def oper_plus (v1,v2): 
     if v1.type == "integer" and v2.type == "integer":
         return VInteger(v1.value + v2.value)
-    raise Exception ("Runtime error: trying to add non-numbers")
+    elif v1.type == "string" and v2.type == "string":
+        return VString(v1.value + v2.value)
+    elif v1.type == "array" and v2.type == "array":
+        return VArray(v1.value + v2.value)
+    raise Exception ("Runtime error: trying to add inncorrect types")
 
 def oper_minus (v1,v2):
     if v1.type == "integer" and v2.type == "integer":
@@ -603,10 +607,6 @@ def oper_update_arr(array,index,update):
 
 def oper_print (v1):
     print v1
-    # print v1.content
-    # for i in v1.content:
-    #     if i.type != "none":
-    #         print i.value
     return VNone()
 
 def oper_length(v1):
@@ -652,18 +652,80 @@ def oper_random(first,last):
 def oper_lessEqual(v1,v2):
     if v1.type == "integer" and v2.type == "integer":
         return VBoolean(v1.value <= v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value <= v2.value)
+    raise Exception ("Runtime error: variable is not a string or int type")
+
+def oper_greaterEqual(v1,v2):
+    if v1.type == "integer" and v2.type == "integer":
+        return VBoolean(v1.value >= v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value >= v2.value)
+    raise Exception ("Runtime error: variable is not a string or int type")
 
 def oper_less(v1,v2):
     if v1.type == "integer" and v2.type == "integer":
         return VBoolean(v1.value < v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value < v2.value)
+    raise Exception ("Runtime error: variable is not a string or int type")
 
 def oper_greater(v1,v2):
     if v1.type == "integer" and v2.type == "integer":
         return VBoolean(v1.value > v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value > v2.value)
+    raise Exception ("Runtime error: variable is not a string or int type")
+
+def oper_notequal(v1,v2):
+    if v1.type == "integer" and v2.type == "integer":
+        return VBoolean(v1.value != v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value != v2.value)
+    elif v1.type == "boolean" and v2.type == "boolean":
+        return VBoolean(v1.value != v2.value)
+    elif v1.type == "array" and v2.type == "array":
+        return VBoolean(v1.value != v2.value)
+    raise Exception ("Runtime error: variable is not a recognized type")
 
 def oper_equal(v1,v2):
     if v1.type == "integer" and v2.type == "integer":
-        return VBoolean(v1.value != v2.value)
+        return VBoolean(v1.value == v2.value)
+    elif v1.type == "string" and v2.type == "string":
+        return VBoolean(v1.value == v2.value)
+    elif v1.type == "boolean" and v2.type == "boolean":
+        return VBoolean(v1.value == v2.value)
+    elif v1.type == "array" and v2.type == "array":
+        return VBoolean(v1.value == v2.value)
+    raise Exception ("Runtime error: variable is not a recognized type")
+
+def oper_not(v1):
+    if v1.type == "boolean":
+        if v1.value == True:
+            return VBoolean(False)
+        elif v1.value == False:
+            return VBoolean(True)
+    raise Exception ("Runtime error: variable is not a boolean type")
+
+def oper_and(v1, v2):
+    if v1.type == "boolean" and v2.type == "boolean":
+        if v1.value == False:
+            return VBoolean(False)
+        elif v2.value == False:
+            return VBoolean(False)
+        else:
+            return VBoolean(True)
+    raise Exception ("Runtime error: variable is not a boolean type")
+
+def oper_or(v1, v2):
+    if v1.type == "boolean" and v2.type == "boolean":
+        if v1.value == True:
+            return VBoolean(True)
+        elif v2.value == True:
+            return VBoolean(True)
+        else:
+            return VBoolean(False)
+    raise Exception ("Runtime error: variable is not a boolean type")
 
 ############################################################
 # IMPERATIVE SURFACE SYNTAX
@@ -749,6 +811,11 @@ def initial_env_imp ():
                                     EPrimCall(oper_lessEqual,[EId("x"),EId("y")]),
                                     env)))) 
     env.insert(0,
+                (">=",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(oper_greaterEqual,[EId("x"),EId("y")]),
+                                    env)))) 
+    env.insert(0,
 
                 ("<",
                 VRefCell(VClosure(["x","y"],
@@ -760,13 +827,30 @@ def initial_env_imp ():
                                     EPrimCall(oper_greater,[EId("x"),EId("y")]),
                                     env))))     
     env.insert(0,
-                ("!=",
+                ("<>",
+                VRefCell(VClosure(["x","y"],
+                                    EPrimCall(oper_notequal,[EId("x"),EId("y")]),
+                                    env))))
+    env.insert(0,
+                ("==",
                 VRefCell(VClosure(["x","y"],
                                     EPrimCall(oper_equal,[EId("x"),EId("y")]),
                                     env))))
-
-
-
+    env.insert(0,
+                ("not",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(oper_not,[EId("x")]),
+                                    env))))
+    env.insert(0,
+                ("and",
+                VRefCell(VClosure(["x", "y"],
+                                    EPrimCall(oper_and,[EId("x"), EId("y")]),
+                                    env))))
+    env.insert(0,
+                ("or",
+                VRefCell(VClosure(["x", "y"],
+                                    EPrimCall(oper_or,[EId("x"), EId("y")]),
+                                    env))))
     return env
 
 
@@ -834,6 +918,7 @@ def parse_imp (input):
     def mkFunBody (params,body):
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
         return ELet(bindings,body)
+        
     def letToFun(result):
         func = result[5]
         binds = result[3]
@@ -847,8 +932,6 @@ def parse_imp (input):
 
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
-
-
 
     pBINDING = "(" + pNAME + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[2]))
