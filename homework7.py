@@ -215,6 +215,7 @@ class ECall (Exp):
     # Call a defined function in the function dictionary
 
     def __init__ (self,fun,exps):
+        print fun,exps, "***************"
         self._fun = fun
         self._args = exps
 
@@ -871,7 +872,16 @@ def parse_imp (input):
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
+    pPLUS =  "(" + pEXPR + Keyword("+") + pEXPR + ")"
+    pPLUS.setParseAction(lambda result: ECall("+",[result[1],result[3]]))
+
+    pTIMES = pEXPR + Keyword("*") + pEXPR 
+    pTIMES.setParseAction(lambda result: ECall("*",[result[0],result[2]]))
+
+    pMINUS =  pEXPR + Keyword("-") + pEXPR 
+    pMINUS.setParseAction(lambda result: ECall("-",[result[0],result[2]]))
+
+    pEXPR << ( pPLUS | pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -971,8 +981,12 @@ def shell_imp ():
 
             if result["result"] == "statement":
                 stmt = result["stmt"]
+                print result,"result"
+                print "came here"
+                print stmt
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
+                print "after this"
 
             elif result["result"] == "abstract":
                 print result["stmt"]
