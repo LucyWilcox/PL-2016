@@ -865,9 +865,6 @@ def parse_imp (input):
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
 
-    pINDEX = Keyword("index") + pINTEGER
-    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
-
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
