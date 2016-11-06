@@ -147,6 +147,8 @@ class EPrimCall (Exp):
     # it takes an explicit function as first argument
 
     def __init__ (self,prim,es):
+        print "came to e prim call"
+        print prim,es
         self._prim = prim
         self._exps = es
 
@@ -227,9 +229,7 @@ class ECall (Exp):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
-        print self._fun, "F"
         f = self._fun.eval(env)
-        print "e"
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -613,6 +613,7 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
+    print "came to oper print"
     print v1
     return VNone()
 
@@ -955,22 +956,14 @@ def parse_imp (input):
     pCALL = "(" + pEXPR + pEXPR + pEXPR + ")"
     pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
 
+
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
 
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    # pPLUS =  "(" + pEXPR + Keyword("+") + pEXPR + ")"
-    # pPLUS.setParseAction(lambda result: ECall("+",[result[1],result[3]]))
-
-    pTIMES = pEXPR + Keyword("*") + pEXPR 
-    pTIMES.setParseAction(lambda result: ECall("*",[result[0],result[2]]))
-
-    pMINUS =  pEXPR + Keyword("-") + pEXPR 
-    pMINUS.setParseAction(lambda result: ECall("-",[result[0],result[2]]))
-
-    pEXPR << ( pCALL | pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN )
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -1072,9 +1065,9 @@ def shell_imp ():
                 stmt = result["stmt"]
                 print result,"result"
                 print "came here"
-                print stmt
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
+                print v
                 print "after this"
 
             elif result["result"] == "abstract":
