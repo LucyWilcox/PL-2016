@@ -824,19 +824,23 @@ def parse_imp (input):
     def letToFun(result):
         func = result[5]
         binds = result[3]
+        print result
+        print binds, "bINDs"
+        print func
         params = []
         vals = []
         for p, v in binds:
             params.append(p)
             vals.append(v)
+        print "FUN"
         return ECall(EFunction(params, func), vals)
 
 
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
 
-    pBINDING = "(" + pNAME + pEXPR + ")"
-    pBINDING.setParseAction(lambda result: (result[1],result[2]))
+    pBINDING = "(" + pNAME + "=" + pEXPR + ")"
+    pBINDING.setParseAction(lambda result: (result[1],result[3]))
 
     pBINDINGS = OneOrMore(pBINDING)
     pBINDINGS.setParseAction(lambda result: [ result ])
@@ -844,7 +848,7 @@ def parse_imp (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
-    pCALL = "(" + pEXPR + pEXPR + pEXPR + ")"
+    pCALL =  "(" + pEXPR + pEXPR + pEXPR + ")"
     pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
 
     pCALL1 = "(" + pEXPR + pEXPR + ")"
