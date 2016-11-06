@@ -154,7 +154,9 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
+        print "PRIMCALL", self._exps
         vs = [ e.eval(env) for e in self._exps ]
+        print "HHH"
         return apply(self._prim,vs)
 
 
@@ -219,11 +221,15 @@ class ECall (Exp):
         self._fun = fun
         self._args = exps
 
+        print self._args, "ARG"
+
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
+        print self._fun, "F"
         f = self._fun.eval(env)
+        print "e"
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -943,20 +949,20 @@ def parse_imp (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
-    pCALL = "(" + pEXPR + pEXPRS + ")"
-    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
+    # pCALL = "(" + pEXPR + pEXPRS + ")"
+    # pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
+
+    pCALL = "(" + pEXPR + pEXPR + pEXPR + ")"
+    pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
 
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
 
-    pINDEX = Keyword("index") + pINTEGER
-    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
-
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pPLUS =  "(" + pEXPR + Keyword("+") + pEXPR + ")"
-    pPLUS.setParseAction(lambda result: ECall("+",[result[1],result[3]]))
+    # pPLUS =  "(" + pEXPR + Keyword("+") + pEXPR + ")"
+    # pPLUS.setParseAction(lambda result: ECall("+",[result[1],result[3]]))
 
     pTIMES = pEXPR + Keyword("*") + pEXPR 
     pTIMES.setParseAction(lambda result: ECall("*",[result[0],result[2]]))
@@ -964,7 +970,7 @@ def parse_imp (input):
     pMINUS =  pEXPR + Keyword("-") + pEXPR 
     pMINUS.setParseAction(lambda result: ECall("-",[result[0],result[2]]))
 
-    pEXPR << ( pPLUS | pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
+    pEXPR << ( pCALL | pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
