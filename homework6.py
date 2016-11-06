@@ -859,8 +859,8 @@ def parse_imp (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
-    pCALL = "(" + pEXPR + pEXPRS + ")"
-    pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
+    pCALL = "(" + pEXPR + pEXPR + pEXPR + ")"
+    pCALL.setParseAction(lambda result: ECall(result[2],[result[1],result[3]]))
 
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
