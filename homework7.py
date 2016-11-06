@@ -16,107 +16,6 @@ wuxiaofan1996@gmail.com
 Remarks:
 
 
-Q1 info:
-for loop should be written as:
-
-for statement expression; statment statement
-
-there will be semicolons between all sections, but most of the 
-time these semicolons are not shown as they are part of the
-statement.
-
-Examples below.
-
-Q1 tests:
-var not = (function (x) (if x false true));
-for var x = 10; (not (zero? x)); x <- (- x 1); print x; 
-10
-9
-8
-7
-6
-5
-4
-3
-2
-1
-
-
-Q2 info: 
-Single quotes ' and double quotes " within a string 
-must be preceeded by a & so 
-"testing a &"string&"" -> "testing a "string""
-
-Q2 tests:
-var s = "string &"test&'";
-print s; # string "test'
-print (length s); # 13
-print (substring s 1 4); # tri
-print (substring s 1 11); # tring "tes
-var m = (substring s 0 4);
-print m; # stri
-print (concat m s); # stristring "test'
-print (startswith s m); # true
-print (startswith m s); # false
-var t1 = "ris";
-print (startswith s t1); # false
-var t2 = "est&'";
-print (endswith s t2); # true
-print (endswith s t1); # false
-var yn = "YES no";
-print (lower yn); # yes no
-print (upper yn); # YES NO
-
-Q3 info:
-Procedures are added to the environment as closures.
-When a procedure is called, and ECall is made with the
-procedure name and expressions.
-
-Q3 tests:
-procedure foo (x y) print x;
-foo(1 2); # 1
-procedure bar (x y z) print (+ x (+ y z));
-bar (1 2 5); #8
-bar (1 2 (+ 5 1)) #9
-procedure addone (x) x <- (+ x 1);
-
-Q4 info:
-And array initializes to VNones and is done by calling EArray
-VArray contains the type, env, content, and methods that can only
-be called on the class. It has also had these methods as actual methods
-in the class. When with is called it includes these methods in the env.
-When elements are added to the array, a function in the initial env, not
-in the VArray env, they are made to be the proper type.
-
-Q4 tests:
-var a = (new-array 2);
-print (with a (length)); #2
-a[0] <- 1;
-a[1] <- 2;
-print (with a (index 1)); #2
-var addone = (function (x) (+ 1 x));
-print (with a (map addone));
-print (with a (index 1)); # 3
-var t = (with a (map addone));
-print (with t (index 1)); #4
-
-procedure swapPivot (a f l) print (with a (swap (+ f (random f l)) l));
-procedure swap (a f l) (with a (swap f l));
-
-procedure quickSortDiv (a f l) if (<= f (- l 1)) {
-      swapPivot(a f l);
-      var pivot = f;
-      for var i = f; (!= l i); i <- (+ i 1); if (<= (with a (index i)) (with a (index l))){
-      swap(a f i); 
-      pivot <- (+ 1 pivot);}
-      swap (a pivot l);
- .... 
- .... quickSortDiv(a f (- pivot 1));
-.... quickSortDiv (a (+ pivot 1) l);};
- .... 
-
-procedure quicksort (a) quickSortDiv(a 0 ( - (with a (length)) 1)); 
-
 """
 import sys
 
@@ -147,8 +46,6 @@ class EPrimCall (Exp):
     # it takes an explicit function as first argument
 
     def __init__ (self,prim,es):
-        print "came to e prim call"
-        print prim,es
         self._prim = prim
         self._exps = es
 
@@ -156,9 +53,7 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
-        print "PRIMCALL", self._exps
         vs = [ e.eval(env) for e in self._exps ]
-        print "HHH"
         return apply(self._prim,vs)
 
 
@@ -613,7 +508,6 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
-    print "came to oper print"
     print v1
     return VNone()
 
@@ -950,12 +844,11 @@ def parse_imp (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
-    # pCALL = "(" + pEXPR + pEXPRS + ")"
-    # pCALL.setParseAction(lambda result: ECall(result[1],result[2]))
-
     pCALL = "(" + pEXPR + pEXPR + pEXPR + ")"
     pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
 
+    pCALL1 = "(" + pEXPR + pEXPR + ")"
+    pCALL1.setParseAction(lambda result: ECall(result[1], [result[2]]))
 
     pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
     pARRAY.setParseAction(lambda result: EArray(result[2]))
@@ -963,7 +856,7 @@ def parse_imp (input):
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL )
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -1063,12 +956,8 @@ def shell_imp ():
 
             if result["result"] == "statement":
                 stmt = result["stmt"]
-                print result,"result"
-                print "came here"
                 # print "Abstract representation:", exp
                 v = stmt.eval(env)
-                print v
-                print "after this"
 
             elif result["result"] == "abstract":
                 print result["stmt"]
