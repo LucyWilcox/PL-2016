@@ -820,20 +820,27 @@ def parse_imp (input):
     pBOOLEAN.setParseAction(lambda result: EValue(VBoolean(result[0]=="true")))
 
     pEXPR = Forward()
+    pEXPR2 = Forward()
+    # pOP = Forward()
+    # pBASE = Forward()
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
 
-    pIF = "(" + Keyword("if") + pEXPR + pEXPR + pEXPR + ")"
-    pIF.setParseAction(lambda result: EIf(result[2],result[3],result[4]))
+    # pIF = Keyword("if") + pEXPR + pEXPR + pEXPR
+    # pIF.setParseAction(lambda result: EIf(result[1],result[2],result[3]))
+
+    pIF = pEXPR + Keyword("?") + pEXPR + Keyword(':') + pEXPR
+    pIF.setParseAction(lambda result: EIf(result[0], result[2], result[4]))
+
 
     def mkFunBody (params,body):
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
         return ELet(bindings,body)
         
     def letToFun(result):
-        func = result[5]
-        binds = result[3]
+        func = result[4]
+        binds = result[2]
         print func,"###########",binds,"###########"
         print result
         print binds, "bINDs"
@@ -850,28 +857,34 @@ def parse_imp (input):
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
 
-    pBINDING = "(" + pNAME + "=" + pEXPR + ")"
+    pBINDING = "(" + pIDENTIFIER + "=" + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[3]))
 
     pBINDINGS = OneOrMore(pBINDING)
     pBINDINGS.setParseAction(lambda result: [ result ])
 
-    pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
+    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
     pLET.setParseAction(letToFun)
 
-    pCALL =  "(" + pEXPR + pIDENTIFIER + pEXPR + ")"
-    pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
+    pCALL =  pEXPR + pIDENTIFIER + pEXPR 
+    pCALL.setParseAction(lambda result: ECall(result[1],[result[0], result[2]]))
 
-    pCALL1 = "(" + pEXPR + pEXPR + ")"
-    pCALL1.setParseAction(lambda result: ECall(result[1], [result[2]]))
+    pCALL1 = pIDENTIFIER + pEXPR
+    pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
 
-    pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
-    pARRAY.setParseAction(lambda result: EArray(result[2]))
+    # pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
+    # pARRAY.setParseAction(lambda result: EArray(result[2]))
 
-    pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
-    pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
+    # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
+    # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+    # pOPEX << ()
+
+    # pBASE << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER )
+
+    pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN | pCALL )
+
+    pEXPR2 << ( pIF | pCALL1 | pCALL | pEXPR  )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -901,7 +914,7 @@ def parse_imp (input):
     pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
 
-    pSTMT_PRINT = "print" + pEXPR + ";"
+    pSTMT_PRINT = "print" + pEXPR2 + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
     pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
@@ -923,7 +936,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pWITH | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
