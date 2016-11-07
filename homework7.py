@@ -264,13 +264,18 @@ class EArray(Exp):
 class EDict(Exp):
     def __init__ (self,dictItems):
         print dictItems,"array items"
+        self._dict = dict()
+        for key, value in dictItems:
+            self._dict[key] = value
+        print self._dict
+
 
 
     def __str__ (self):
-        return "EArray(length: {})".format(str(self._length))
+        return "EDICT(length: {})".format(str(self._length))
 
     def eval (self,env):
-        return VArray(self._content,env)
+        return VDict(self._dict,env)
 
 
 
@@ -358,6 +363,13 @@ class VClosure (Value):
 
     def __str__ (self):
         return "<function [{}] {}>".format(",".join(self.params),str(self.body))
+        
+class VDict(Value):
+    def __init__ (self,content,env):
+        self.content = content
+        self.type = "dict"
+        self.env = env
+
 
 class VArray(Value):
     def __init__ (self,content,env):
