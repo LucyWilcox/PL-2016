@@ -887,7 +887,7 @@ def parse_imp (input):
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
 
-    pBINDING = "(" + pIDENTIFIER + "=" + pEXPR + ")"
+    pBINDING = "(" + pNAME + "=" + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[3]))
 
     pBINDINGS = OneOrMore(pBINDING)
@@ -910,9 +910,6 @@ def parse_imp (input):
 
     # pOPEX << ()
 
-<<<<<<< HEAD
-    # pBASE << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER )
-=======
     pARRAY = "[" + pEXPRS+ "]"
     pARRAY.setParseAction(lambda result: EArray(result[1]))
 
@@ -924,15 +921,13 @@ def parse_imp (input):
 
     pDICT = "{" + pDICTS + "}"
     pDICT.setParseAction(lambda result:EDict(result[1]))
->>>>>>> 6c9699f283871a6809b7c32c72531592b42bd633
 
-    pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN | pCALL )
+    pEXPR << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN )
 
-<<<<<<< HEAD
     pEXPR2 << ( pIF | pCALL1 | pCALL | pEXPR  )
-=======
-    pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
->>>>>>> 6c9699f283871a6809b7c32c72531592b42bd633
+
+    # pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
