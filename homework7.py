@@ -53,12 +53,9 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
-        print "before eprim eval?????"
-        print self._exps,"exps"
-        print self._exps[0].eval(env),"first itme"
+        print "enterp"
         vs = [ e.eval(env) for e in self._exps ]
-        print self._prim,"prim"
-        print apply(self._prim,vs)
+        print "exitp", self._prim, vs, "$", self._exps
         return apply(self._prim,vs)
 
 
@@ -130,6 +127,7 @@ class ECall (Exp):
 
     def eval (self,env):
         print "before ecall eval????"
+
         #EFunction([['x', 'y']],EId(x))
         print self._fun,"before eval"
         f = self._fun.eval(env)
@@ -142,7 +140,11 @@ class ECall (Exp):
             if f.env.type == "array":
                 new_env = zip(f.params,args) + f.env.methods
         else:
+            # new_args = [x.eval(env) for x in self._args]
+            # new_vals = zip(f.params, new_args)
+            # new_env = new_vals + f.env
             new_env = zip(f.params,args) + f.env
+        print "exit", f.body, new_env
         return f.body.eval(new_env)
 
 
