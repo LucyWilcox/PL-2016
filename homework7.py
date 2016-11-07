@@ -53,7 +53,7 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
-        print "enterp"
+        print "enterp",self._exps
         vs = [ e.eval(env) for e in self._exps ]
         print "exitp", self._prim, vs, "$", self._exps
         return apply(self._prim,vs)
@@ -126,6 +126,7 @@ class ECall (Exp):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
+        print "before ecall eval????"
 
         #EFunction([['x', 'y']],EId(x))
         print self._fun,"before eval"
@@ -246,14 +247,36 @@ class EProcedure (Exp):
         return VClosure(self._params,self._body,env)
 
 class EArray(Exp):
-    def __init__ (self,length):
-        self._length = length
+    def __init__ (self,arrayItems):
+        print arrayItems,"array items"
+        self._length = len(arrayItems)
+        self._content = []
+        for each in self._content:
+            self._content.append(each)
+
 
     def __str__ (self):
         return "EArray(length: {})".format(str(self._length))
 
     def eval (self,env):
-        return VArray(self._length,env)
+        return VArray(self._content,env)
+
+class EDict(Exp):
+    def __init__ (self,dictItems):
+        print dictItems,"array items"
+        self._dict = dict()
+        for key, value in dictItems:
+            self._dict[key] = value
+        print self._dict
+
+
+
+    def __str__ (self):
+        return "EDICT(length: {})".format(str(self._length))
+
+    def eval (self,env):
+        return VDict(self._dict,env)
+
 
 
 class EObject (Exp):
@@ -340,10 +363,17 @@ class VClosure (Value):
 
     def __str__ (self):
         return "<function [{}] {}>".format(",".join(self.params),str(self.body))
+        
+class VDict(Value):
+    def __init__ (self,content,env):
+        self.content = content
+        self.type = "dict"
+        self.env = env
+
 
 class VArray(Value):
-    def __init__ (self,initial,env):
-        self.content = [VNone()] * initial.eval(env).value
+    def __init__ (self,content,env):
+        self.content = content
         self.type = "array"
         self.env = env
         self.methods = [
@@ -880,11 +910,29 @@ def parse_imp (input):
 
     # pOPEX << ()
 
+<<<<<<< HEAD
     # pBASE << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER )
+=======
+    pARRAY = "[" + pEXPRS+ "]"
+    pARRAY.setParseAction(lambda result: EArray(result[1]))
+
+    pDICTPAIR = pNAME + ":" + pEXPR
+    pDICTPAIR.setParseAction(lambda result: (result[0],result[2]))
+
+    pDICTS = OneOrMore(pDICTPAIR)
+    pDICTS.setParseAction(lambda result: [ result ])
+
+    pDICT = "{" + pDICTS + "}"
+    pDICT.setParseAction(lambda result:EDict(result[1]))
+>>>>>>> 6c9699f283871a6809b7c32c72531592b42bd633
 
     pEXPR << (pINTEGER | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN | pCALL )
 
+<<<<<<< HEAD
     pEXPR2 << ( pIF | pCALL1 | pCALL | pEXPR  )
+=======
+    pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+>>>>>>> 6c9699f283871a6809b7c32c72531592b42bd633
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
