@@ -53,7 +53,12 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
+        print "before eprim eval?????"
+        print self._exps,"exps"
+        print self._exps[0].eval(env),"first itme"
         vs = [ e.eval(env) for e in self._exps ]
+        print self._prim,"prim"
+        print apply(self._prim,vs)
         return apply(self._prim,vs)
 
 
@@ -124,6 +129,7 @@ class ECall (Exp):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
+        print "before ecall eval????"
         #EFunction([['x', 'y']],EId(x))
         print self._fun,"before eval"
         f = self._fun.eval(env)
@@ -239,14 +245,19 @@ class EProcedure (Exp):
         return VClosure(self._params,self._body,env)
 
 class EArray(Exp):
-    def __init__ (self,length):
-        self._length = length
+    def __init__ (self,arrayItems):
+        print arrayItems,"array items"
+        self._length = len(arrayItems)
+        self._content = []
+        for each in self._content:
+            self._content.append(each)
+
 
     def __str__ (self):
         return "EArray(length: {})".format(str(self._length))
 
     def eval (self,env):
-        return VArray(self._length,env)
+        return VArray(self._content,env)
 
 
 class EObject (Exp):
@@ -335,8 +346,8 @@ class VClosure (Value):
         return "<function [{}] {}>".format(",".join(self.params),str(self.body))
 
 class VArray(Value):
-    def __init__ (self,initial,env):
-        self.content = [VNone()] * initial.eval(env).value
+    def __init__ (self,content,env):
+        self.content = content
         self.type = "array"
         self.env = env
         self.methods = [
@@ -858,8 +869,8 @@ def parse_imp (input):
     pCALL1 = "(" + pEXPR + pEXPR + ")"
     pCALL1.setParseAction(lambda result: ECall(result[1], [result[2]]))
 
-    pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
-    pARRAY.setParseAction(lambda result: EArray(result[2]))
+    pARRAY = "[" + pEXPRS+ "]"
+    pARRAY.setParseAction(lambda result: EArray(result[1]))
 
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
