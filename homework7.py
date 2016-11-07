@@ -53,7 +53,7 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
-        print "enterp"
+        print "enterp",self._exps
         vs = [ e.eval(env) for e in self._exps ]
         print "exitp", self._prim, vs, "$", self._exps
         return apply(self._prim,vs)
@@ -260,6 +260,18 @@ class EArray(Exp):
 
     def eval (self,env):
         return VArray(self._content,env)
+
+class EDict(Exp):
+    def __init__ (self,dictItems):
+        print dictItems,"array items"
+
+
+    def __str__ (self):
+        return "EArray(length: {})".format(str(self._length))
+
+    def eval (self,env):
+        return VArray(self._content,env)
+
 
 
 class EObject (Exp):
@@ -874,10 +886,19 @@ def parse_imp (input):
     pARRAY = "[" + pEXPRS+ "]"
     pARRAY.setParseAction(lambda result: EArray(result[1]))
 
+    pDICTPAIR = pNAME + ":" + pEXPR
+    pDICTPAIR.setParseAction(lambda result: (result[0],result[2]))
+
+    pDICTS = OneOrMore(pDICTPAIR)
+    pDICTS.setParseAction(lambda result: [ result ])
+
+    pDICT = "{" + pDICTS + "}"
+    pDICT.setParseAction(lambda result:EDict(result[1]))
+
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+    pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
