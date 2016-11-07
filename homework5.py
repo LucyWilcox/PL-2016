@@ -100,6 +100,7 @@ class ECall (Exp):
         return "ECall({},{})".format(str(self._fun),str(self._args))
 
     def eval (self,env):
+        print self._fun,"before eval"
         f = self._fun.eval(env)
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")

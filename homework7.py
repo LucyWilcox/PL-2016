@@ -124,6 +124,8 @@ class ECall (Exp):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
+        #EFunction([['x', 'y']],EId(x))
+        print self._fun,"before eval"
         f = self._fun.eval(env)
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
@@ -487,6 +489,7 @@ def oper_zero (v1):
     raise Exception ("Runtime error: type error in zero?")
 
 def oper_deref (v1):
+    print v1,"v1***************"
     if v1.type == "ref":
         return v1.content
     raise Exception ("Runtime error: dereferencing a non-reference value")
@@ -824,6 +827,7 @@ def parse_imp (input):
     def letToFun(result):
         func = result[5]
         binds = result[3]
+        print func,"###########",binds,"###########"
         print result
         print binds, "bINDs"
         print func
@@ -848,7 +852,7 @@ def parse_imp (input):
     pLET = "(" + Keyword("let") + "(" + pBINDINGS + ")" + pEXPR + ")"
     pLET.setParseAction(letToFun)
 
-    pCALL =  "(" + pEXPR + pEXPR + pEXPR + ")"
+    pCALL =  "(" + pEXPR + pIDENTIFIER + pEXPR + ")"
     pCALL.setParseAction(lambda result: ECall(result[2],[result[1], result[3]]))
 
     pCALL1 = "(" + pEXPR + pEXPR + ")"
@@ -860,7 +864,7 @@ def parse_imp (input):
     pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+    pEXPR << ( pINTEGER | pARRAY | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
