@@ -53,7 +53,9 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
+        print "enterp"
         vs = [ e.eval(env) for e in self._exps ]
+        print "exitp", self._prim, vs, "$", self._exps
         return apply(self._prim,vs)
 
 
@@ -124,6 +126,7 @@ class ECall (Exp):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
+        print "enter"
         f = self._fun.eval(env)
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
@@ -134,7 +137,11 @@ class ECall (Exp):
             if f.env.type == "array":
                 new_env = zip(f.params,args) + f.env.methods
         else:
+            # new_args = [x.eval(env) for x in self._args]
+            # new_vals = zip(f.params, new_args)
+            # new_env = new_vals + f.env
             new_env = zip(f.params,args) + f.env
+        print "exit", f.body, new_env
         return f.body.eval(new_env)
 
 
