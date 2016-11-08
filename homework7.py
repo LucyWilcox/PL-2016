@@ -855,9 +855,15 @@ def parse_imp (input):
 
 
     def mkFunBody (params,body):
+        print params, "P"
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
+        print bindings, "BINDINGS"
         return ELet(bindings,body)
-        
+
+    def mkLetBody (bindings,body):
+        bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
+        return ELet(bindings,body)
+
     def letToFun(result):
         func = result[4]
         binds = result[2]
@@ -884,7 +890,8 @@ def parse_imp (input):
     pBINDINGS.setParseAction(lambda result: [ result ])
 
     pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
-    pLET.setParseAction(letToFun)
+    pLET.setParseAction(lambda result: mkLetBody(result[2], result[4]))
+    # pLET.setParseAction(letToFun)
 
     pCALLG = pIDENTIFIER + pEXPR2
     pCALLG.setParseAction(lambda result: (result[0], result[1]))
@@ -904,7 +911,6 @@ def parse_imp (input):
     # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-
     pARRAY = "[" + pEXPRS+ "]"
     pARRAY.setParseAction(lambda result: EArray(result[1]))
 
@@ -920,12 +926,11 @@ def parse_imp (input):
     pEXPR2P = "(" + pEXPR2 + ")"
     pEXPR2P.setParseAction(lambda result: result[1])
 
-    pEXPR << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN )
+    pEXPR << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pLET | pFUN | pIDENTIFIER )
 
     pEXPR2 << ( pIF | pCALL | pCALL1 | pEXPR | pEXPR2P )
 
     # pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
-
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR2 + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -941,7 +946,6 @@ def parse_imp (input):
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
-
 
     pSTMT_IF_1 = "if" + pEXPR + pSTMT + "else" + pSTMT
     pSTMT_IF_1.setParseAction(lambda result: EIf(result[1],result[2],result[4]))
