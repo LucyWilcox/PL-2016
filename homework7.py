@@ -53,9 +53,7 @@ class EPrimCall (Exp):
         return "EPrimCall(<prim>,[{}])".format(",".join([ str(e) for e in self._exps]))
 
     def eval (self,env):
-        print "enterp",self._exps
         vs = [ e.eval(env) for e in self._exps ]
-        print "exitp", self._prim, vs, "$", self._exps
         return apply(self._prim,vs)
 
 
@@ -116,18 +114,13 @@ class ECall (Exp):
     # Call a defined function in the function dictionary
 
     def __init__ (self,fun,exps):
-        print fun,exps, "***************"
         self._fun = fun
         self._args = exps
-
-        print self._args, "ARG"
 
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
-        print "before ecall eval????"
-
         #EFunction([['x', 'y']],EId(x))
         print self._fun,"before eval"
         f = self._fun.eval(env)
@@ -144,7 +137,6 @@ class ECall (Exp):
             # new_vals = zip(f.params, new_args)
             # new_env = new_vals + f.env
             new_env = zip(f.params,args) + f.env
-        print "exit", f.body, new_env
         return f.body.eval(new_env)
 
 
@@ -851,8 +843,6 @@ def parse_imp (input):
 
     pEXPR = Forward()
     pEXPR2 = Forward()
-    # pOP = Forward()
-    # pBASE = Forward()
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
@@ -871,21 +861,21 @@ def parse_imp (input):
     def letToFun(result):
         func = result[4]
         binds = result[2]
-        print func,"###########",binds,"###########"
-        print result
-        print binds, "bINDs"
-        print func
         params = []
         vals = []
         for p, v in binds:
             params.append(p)
             vals.append(v)
-        print "FUN"
         return ECall(EFunction(params, func), vals)
 
+    def multiCall(result):
+        first = ECall(result[1][0][0],[result[0], result[1][0][1]])
+        for i in range(1, len(result[1])):
+            first = ECall(result[1][i][0], [first, result[1][i][1]])
+        return first
 
-    pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pEXPR + ")"
-    pFUN.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5])))
+    pFUN = Keyword("fun") + "(" + pNAMES + ")" + pEXPR2
+    pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
     pBINDING = "(" + pNAME + "=" + pEXPR + ")"
     pBINDING.setParseAction(lambda result: (result[1],result[3]))
@@ -896,8 +886,14 @@ def parse_imp (input):
     pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
     pLET.setParseAction(letToFun)
 
-    pCALL =  pEXPR + pIDENTIFIER + pEXPR 
-    pCALL.setParseAction(lambda result: ECall(result[1],[result[0], result[2]]))
+    pCALLG = pIDENTIFIER + pEXPR2
+    pCALLG.setParseAction(lambda result: (result[0], result[1]))
+
+    pCALL1S = OneOrMore(pCALLG)
+    pCALL1S.setParseAction(lambda result: [ result ])
+
+    pCALL =  pEXPR + pCALL1S 
+    pCALL.setParseAction(multiCall)
 
     pCALL1 = pIDENTIFIER + pEXPR
     pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
@@ -908,7 +904,6 @@ def parse_imp (input):
     # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    # pOPEX << ()
 
     pARRAY = "[" + pEXPRS+ "]"
     pARRAY.setParseAction(lambda result: EArray(result[1]))
@@ -922,14 +917,17 @@ def parse_imp (input):
     pDICT = "{" + pDICTS + "}"
     pDICT.setParseAction(lambda result:EDict(result[1]))
 
+    pEXPR2P = "(" + pEXPR2 + ")"
+    pEXPR2P.setParseAction(lambda result: result[1])
+
     pEXPR << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pIDENTIFIER | pLET | pFUN )
 
-    pEXPR2 << ( pIF | pCALL1 | pCALL | pEXPR  )
+    pEXPR2 << ( pIF | pCALL | pCALL1 | pEXPR | pEXPR2P )
 
     # pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
 
 
-    pDECL_VAR = "var" + pNAME + "=" + pEXPR + ";"
+    pDECL_VAR = "var" + pNAME + "=" + pEXPR2 + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
 
     pSTMT = Forward()
