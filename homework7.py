@@ -855,24 +855,22 @@ def parse_imp (input):
 
 
     def mkFunBody (params,body):
-        print params, "P"
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
-        print bindings, "BINDINGS"
         return ELet(bindings,body)
 
     def mkLetBody (bindings,body):
         bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
         return ELet(bindings,body)
 
-    def letToFun(result):
-        func = result[4]
-        binds = result[2]
-        params = []
-        vals = []
-        for p, v in binds:
-            params.append(p)
-            vals.append(v)
-        return ECall(EFunction(params, func), vals)
+    # def letToFun(result):
+    #     func = result[4]
+    #     binds = result[2]
+    #     params = []
+    #     vals = []
+    #     for p, v in binds:
+    #         params.append(p)
+    #         vals.append(v)
+    #     return ECall(EFunction(params, func), vals)
 
     def multiCall(result):
         first = ECall(result[1][0][0],[result[0], result[1][0][1]])
@@ -883,15 +881,17 @@ def parse_imp (input):
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pEXPR2
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
-    pBINDING = "(" + pNAME + "=" + pEXPR + ")"
-    pBINDING.setParseAction(lambda result: (result[1],result[3]))
+    pBINDINGCAR = "," + pNAME + "=" + pEXPR2
+    pBINDINGCAR.setParseAction(lambda result: (result[1], result[3]))
+    
+    pBINDINGCON = pNAME + "=" + pEXPR2
+    pBINDINGCON.setParseAction(lambda result: (result[0], result[2]))
 
-    pBINDINGS = OneOrMore(pBINDING)
+    pBINDINGS = pBINDINGCON + ZeroOrMore(pBINDINGCAR)
     pBINDINGS.setParseAction(lambda result: [ result ])
 
-    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
+    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR2
     pLET.setParseAction(lambda result: mkLetBody(result[2], result[4]))
-    # pLET.setParseAction(letToFun)
 
     pCALLG = pIDENTIFIER + pEXPR2
     pCALLG.setParseAction(lambda result: (result[0], result[1]))
@@ -947,14 +947,14 @@ def parse_imp (input):
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
 
-    pSTMT_IF_1 = "if" + pEXPR + pSTMT + "else" + pSTMT
-    pSTMT_IF_1.setParseAction(lambda result: EIf(result[1],result[2],result[4]))
+    pSTMT_IF_1 = "if (" + pEXPR2 + ")" + pSTMT + "else" + pSTMT
+    pSTMT_IF_1.setParseAction(lambda result: EIf(result[1],result[3],result[5]))
 
-    pSTMT_IF_2 = "if" + pEXPR + pSTMT
-    pSTMT_IF_2.setParseAction(lambda result: EIf(result[1],result[2],EValue(VBoolean(True))))
+    pSTMT_IF_2 = "if (" + pEXPR2 + ")" + pSTMT
+    pSTMT_IF_2.setParseAction(lambda result: EIf(result[1],result[3],EValue(VBoolean(True))))
    
-    pSTMT_WHILE = "while" + pEXPR + pSTMT
-    pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[2]))
+    pSTMT_WHILE = "while (" + pEXPR2 + ")" + pSTMT
+    pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[3]))
 
     pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
@@ -965,7 +965,7 @@ def parse_imp (input):
     pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
-    pSTMT_UPDATE = pNAME + "<-" + pEXPR + ";"
+    pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
     pSTMT_UPDATE.setParseAction(lambda result: EPrimCall(oper_update,[EId(result[0]),result[2]]))
 
     pSTMT_PROCEDURE = pEXPR + "(" + pEXPRS + ")" + ";"
