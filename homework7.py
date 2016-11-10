@@ -15,6 +15,11 @@ wuxiaofan1996@gmail.com
 
 Remarks:
 
+Parenthesis must be used for expression in some expressions, for example:
+print true ? 2 : 3; is vaild
+print not true ? 2 : 3; is not valid
+print (not true) ? 2 : 3; is valid
+
 
 """
 import sys
@@ -91,7 +96,10 @@ class ELet (Exp):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
 
     def eval (self,env):
+        print "$$"
         new_env = [ (id,e.eval(env)) for (id,e) in self._bindings] + env
+        print self._e2, "E2"
+        print new_env, "NEWENV"
         return self._e2.eval(new_env)
 
 class EId (Exp):
@@ -136,6 +144,7 @@ class ECall (Exp):
             # new_args = [x.eval(env) for x in self._args]
             # new_vals = zip(f.params, new_args)
             # new_env = new_vals + f.env
+            print "HEY"
             new_env = zip(f.params,args) + f.env
         return f.body.eval(new_env)
 
@@ -843,12 +852,11 @@ def parse_imp (input):
 
     pEXPR = Forward()
     pEXPR2 = Forward()
+    # pEXPR3 = Forward()
+    pSTMT_BLOCK = Forward()
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
-
-    # pIF = Keyword("if") + pEXPR + pEXPR + pEXPR
-    # pIF.setParseAction(lambda result: EIf(result[1],result[2],result[3]))
 
     pIF = pEXPR + Keyword("?") + pEXPR + Keyword(':') + pEXPR
     pIF.setParseAction(lambda result: EIf(result[0], result[2], result[4]))
@@ -859,7 +867,9 @@ def parse_imp (input):
         return ELet(bindings,body)
 
     def mkLetBody (bindings,body):
+        print "LET", bindings, body
         bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
+        print bindings, body
         return ELet(bindings,body)
 
     # def letToFun(result):
@@ -887,10 +897,15 @@ def parse_imp (input):
     pBINDINGCON = pNAME + "=" + pEXPR2
     pBINDINGCON.setParseAction(lambda result: (result[0], result[2]))
 
-    pBINDINGS = pBINDINGCON + ZeroOrMore(pBINDINGCAR)
-    pBINDINGS.setParseAction(lambda result: [ result ])
+    def yeah(res):
+        print res, 'RES'
 
-    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR2
+    pBINDINGS = pBINDINGCON  + ZeroOrMore(pBINDINGCAR)
+    # pBINDINGS.setParseAction(yeah)
+    pBINDINGS.setParseAction(lambda result: [result])
+
+    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
+    # pLET.setParseAction(letToFun)
     pLET.setParseAction(lambda result: mkLetBody(result[2], result[4]))
 
     pCALLG = pIDENTIFIER + pEXPR2
@@ -926,9 +941,11 @@ def parse_imp (input):
     pEXPR2P = "(" + pEXPR2 + ")"
     pEXPR2P.setParseAction(lambda result: result[1])
 
-    pEXPR << (pINTEGER | pARRAY | pSTRING | pBOOLEAN | pLET | pFUN | pIDENTIFIER )
 
-    pEXPR2 << ( pIF | pCALL | pCALL1 | pEXPR | pEXPR2P )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER )
+
+    pEXPR2 << ( pIF | pCALL | pCALL1 | pEXPR )
+
 
     # pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
 
