@@ -128,7 +128,7 @@ class ECall (Exp):
 
     def eval (self,env):
         f = self._fun.eval(env)
-
+        print f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -539,6 +539,19 @@ def oper_update_arr(array,index,update):
             array.content.content[index.value] = VBoolean(update.value)
         return VNone()
 
+def oper_access_arr(arrayOrDict,index):
+    if arrayOrDict.type == "ref":
+        current = arrayOrDict.content.content[index.value]._value.value
+        if isinstance(current, int):
+            return VInteger(current)
+        if isinstance(current, str):
+            return VString(current)
+        if isinstance(current, bool):
+            return VBoolean(current)
+
+
+
+
 def oper_print (v1):
     if v1.type == "array":
         newArray = []
@@ -910,9 +923,6 @@ def parse_imp (input):
     pCALL1 = pIDENTIFIER + pEXPR
     pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
 
-    # pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
-    # pARRAY.setParseAction(lambda result: EArray(result[2]))
-
     # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
@@ -923,9 +933,7 @@ def parse_imp (input):
     pARRAYITEMS = ZeroOrMore(pARRAYITEM)
     pARRAYITEMS.setParseAction(lambda result: [result])
 
-
     pARRAY = "[" + pEXPR + pARRAYITEMS + "]"
-    # pARRAY = "[" + pEXPRS  + "]"
     pARRAY.setParseAction(lambda result: EArray(result[1],result[2]))
 
     pDICTPAIR = pNAME + ":" + pEXPR
@@ -943,8 +951,11 @@ def parse_imp (input):
     pEXPR2P = "(" + pEXPR2 + ")"
     pEXPR2P.setParseAction(lambda result: result[1])
 
+    pACCESS = pNAME + "[" + pEXPR + "]"
+    pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pDICT | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
+
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
