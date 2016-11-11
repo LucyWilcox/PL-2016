@@ -224,19 +224,9 @@ class EFor (Exp):
         return "EFor({},{},{},{})".format(str(self._i), str(self._body), str(self._exp))
 
     def eval (self,env):
-        print self._body, self._exp, self._i
-
-        # if self._init[0] != ";":
-        #     for i in range(len(self._init[0]) - 1):
-        #         v = self._init[i][1].eval(env)
-        #         env.insert(0,(self._init[i][0],VRefCell(v)))
-        # c = self._cond.eval(env)
-        # while c.value:
-        #     self._exp.eval(env)
-        #     self._incre.eval(env)
-        #     c = self._cond.eval(env)
-        #     if c.type != "boolean":
-        #         raise Exception ("Runtime error: while condition not a Boolean")
+        for i in self._exp.eval(env).value:
+            i_val = (self._i, VRefCell(i))
+            self._body.eval([i_val] + env)
   
 class EProcedure (Exp):
     def __init__ (self,params,body):
@@ -794,6 +784,11 @@ def initial_env_imp ():
                 ("or",
                 VRefCell(VClosure(["x", "y"],
                                     EPrimCall(oper_or,[EId("x"), EId("y")]),
+                                    env))))
+    env.insert(0,
+                ("print",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(oper_print,[EId("x")]),
                                     env))))
     return env
 
