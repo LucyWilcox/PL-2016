@@ -244,12 +244,17 @@ class EProcedure (Exp):
         return VClosure(self._params,self._body,env)
 
 class EArray(Exp):
-    def __init__ (self,arrayItems):
-        print arrayItems,"array items"
-        self._length = len(arrayItems)
+    def __init__ (self,itemOne,arrayItems):
+        print itemOne,arrayItems,"****************"
+        print "here?"
         self._content = []
-        for each in self._content:
-            self._content.append(each)
+        self._content.append(itemOne)
+        print "here"
+        for i, each in enumerate(arrayItems):
+            print i, each
+            if i%2 != 0:
+                self._content.append(each)
+        print self._content
 
 
     def __str__ (self):
@@ -544,6 +549,12 @@ def oper_update_arr(array,index,update):
         return VNone()
 
 def oper_print (v1):
+    if v1.type == "array":
+        newArray = []
+        for each in v1.content:
+            newArray.append(each._value.value)
+        print newArray
+        return VNone()
     print v1
     return VNone()
 
@@ -914,8 +925,15 @@ def parse_imp (input):
     # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pARRAY = "[" + pEXPRS+ "]"
-    pARRAY.setParseAction(lambda result: EArray(result[1]))
+
+    pARRAYITEM = "," + pEXPR
+    pARRAYITEMS = ZeroOrMore(pARRAYITEM)
+    pARRAYITEMS.setParseAction(lambda result: [result])
+
+
+    pARRAY = "[" + pEXPR + pARRAYITEMS + "]"
+    # pARRAY = "[" + pEXPRS  + "]"
+    pARRAY.setParseAction(lambda result: EArray(result[1],result[2]))
 
     pDICTPAIR = pNAME + ":" + pEXPR
     pDICTPAIR.setParseAction(lambda result: (result[0],result[2]))
