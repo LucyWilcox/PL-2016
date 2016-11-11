@@ -219,7 +219,10 @@ class EFor (Exp):
 
     def eval (self,env):
         for i in self._exp.eval(env).value:
-            i_val = (self._i, VRefCell(i))
+            if hasattr(i, "_value"):
+                i_val = (self._i, VRefCell(i.eval(env)))
+            else:
+                i_val = (self._i, VRefCell(i))
             self._body.eval([i_val] + env)
   
 class EProcedure (Exp):
