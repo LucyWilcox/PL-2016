@@ -245,16 +245,10 @@ class EProcedure (Exp):
 
 class EArray(Exp):
     def __init__ (self,itemOne,arrayItems):
-        print itemOne,arrayItems,"****************"
-        print "here?"
         self._content = []
         self._content.append(itemOne)
-        print "here"
         for i, each in enumerate(arrayItems):
-            print i, each
-            if i%2 != 0:
-                self._content.append(each)
-        print self._content
+            self._content.append(each)
 
 
     def __str__ (self):
@@ -264,14 +258,11 @@ class EArray(Exp):
         return VArray(self._content,env)
 
 class EDict(Exp):
-    def __init__ (self,dictItems):
-        print dictItems,"array items"
+    def __init__ (self,firstitem,dictItems):
         self._dict = dict()
+        self._dict[firstitem[0]] = firstitem[1]
         for key, value in dictItems:
             self._dict[key] = value
-        print self._dict
-
-
 
     def __str__ (self):
         return "EDICT(length: {})".format(str(self._length))
@@ -927,6 +918,8 @@ def parse_imp (input):
 
 
     pARRAYITEM = "," + pEXPR
+    pARRAYITEM.setParseAction(lambda result: (result[1]))
+
     pARRAYITEMS = ZeroOrMore(pARRAYITEM)
     pARRAYITEMS.setParseAction(lambda result: [result])
 
@@ -938,17 +931,20 @@ def parse_imp (input):
     pDICTPAIR = pNAME + ":" + pEXPR
     pDICTPAIR.setParseAction(lambda result: (result[0],result[2]))
 
-    pDICTS = OneOrMore(pDICTPAIR)
+    pDICTPAIRWITHCOMMA = "," + pNAME + ":" + pEXPR
+    pDICTPAIRWITHCOMMA.setParseAction(lambda result: (result[1],result[3]))
+
+    pDICTS = ZeroOrMore(pDICTPAIRWITHCOMMA)
     pDICTS.setParseAction(lambda result: [ result ])
 
-    pDICT = "{" + pDICTS + "}"
-    pDICT.setParseAction(lambda result:EDict(result[1]))
+    pDICT = "{" + pDICTPAIR + pDICTS + "}"
+    pDICT.setParseAction(lambda result:EDict(result[1],result[2]))
 
     pEXPR2P = "(" + pEXPR2 + ")"
     pEXPR2P.setParseAction(lambda result: result[1])
 
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pDICT | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
