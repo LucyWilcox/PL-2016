@@ -155,7 +155,7 @@ class EFunction (Exp):
         return "EFunction([{}],{})".format(",".join(self._params),str(self._body))
 
     def eval (self,env):
-        return VClosure(self._params,self._body,env)
+        return VClosure(self._params,sprielf._body,env)
 
 
 class ERefCell (Exp):
@@ -209,12 +209,6 @@ class EWhile (Exp):
 
 class EFor (Exp):
 
-    # def __init__ (self, init, cond, incre, exp):
-    #     self._init = init
-    #     self._cond = cond
-    #     self._incre = incre
-    #     self._exp = exp
-
     def __init__ (self, i, exp, body):
         self._i = i
         self._body = body
@@ -232,7 +226,6 @@ class EProcedure (Exp):
     def __init__ (self,params,body):
         self._params = params
         self._body = body
-
 
     def __str__ (self):
         return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
@@ -363,7 +356,7 @@ class VDict(Value):
 
 class VArray(Value):
     def __init__ (self,content,env):
-        self.content = content
+        self.value = content
         self.type = "array"
         self.env = env
         self.methods = [
@@ -386,28 +379,28 @@ class VArray(Value):
                 ]
 
     def __str__ (self):
-        return "<ref {}>".format(str(self.content))
+        return "<ref {}>".format(str(self.value))
 
     def oper_index(self, i):
         if i.type == "integer":
-            return self.content[i.value]
+            return self.value[i.value]
         raise Exception ("Runtime error: variable is not a integer type")
 
     def oper_length(self):
-        return VInteger(len(self.content))
+        return VInteger(len(self.value))
 
     def oper_swap(self,i1,i2):
         if i1.type == "integer" and i2.type == "integer":
-            temp = self.content[i1.value]
-            self.content[i1.value] = self.content[i2.value]
-            self.content[i2.value] = temp
+            temp = self.value[i1.value]
+            self.value[i1.value] = self.value[i2.value]
+            self.value[i2.value] = temp
             return VNone()
         raise Exception ("Runtime error: variable is not a integer type")
 
 
     def oper_map(self,function):
-        for i, v in enumerate(self.content):
-            self.content[i] = function.body.eval([(function.params[0], v)] + function.env)
+        for i, v in enumerate(self.value):
+            self.value[i] = function.body.eval([(function.params[0], v)] + function.env)
         return self
 
 
@@ -546,20 +539,19 @@ def oper_access_arr(arrayOrDict,index):
         if isinstance(current, bool):
             return VBoolean(current)
 
-
-
-
 def oper_print (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
             newArray = []
-            for each in v1.content:
+            for each in v1.value:
                 newArray.append(each._value.value)
             print newArray
             return VNone()
-    else:
-        print v1
-        return VNone()
+        else:
+            print v1.value
+            return VNone()
+    print v1
+    return VNone()
 
 def oper_length(v1):
     if v1.type == "string":
