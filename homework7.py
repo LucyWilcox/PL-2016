@@ -127,7 +127,7 @@ class ECall (Exp):
 
     def eval (self,env):
         f = self._fun.eval(env)
-
+        print f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -233,6 +233,7 @@ class EProcedure (Exp):
         self._params = params
         self._body = body
 
+
     def __str__ (self):
         return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
 
@@ -240,11 +241,10 @@ class EProcedure (Exp):
         return VClosure(self._params,self._body,env)
 
 class EArray(Exp):
-    def __init__ (self,arrayItems):
-        print arrayItems,"array items"
-        self._length = len(arrayItems)
+    def __init__ (self,itemOne,arrayItems):
         self._content = []
-        for each in self._content:
+        self._content.append(itemOne)
+        for i, each in enumerate(arrayItems):
             self._content.append(each)
 
 
@@ -255,14 +255,11 @@ class EArray(Exp):
         return VArray(self._content,env)
 
 class EDict(Exp):
-    def __init__ (self,dictItems):
-        print dictItems,"array items"
+    def __init__ (self,firstitem,dictItems):
         self._dict = dict()
+        self._dict[firstitem[0]] = firstitem[1]
         for key, value in dictItems:
             self._dict[key] = value
-        print self._dict
-
-
 
     def __str__ (self):
         return "EDICT(length: {})".format(str(self._length))
@@ -539,9 +536,30 @@ def oper_update_arr(array,index,update):
             array.content.content[index.value] = VBoolean(update.value)
         return VNone()
 
+def oper_access_arr(arrayOrDict,index):
+    if arrayOrDict.type == "ref":
+        current = arrayOrDict.content.content[index.value]._value.value
+        if isinstance(current, int):
+            return VInteger(current)
+        if isinstance(current, str):
+            return VString(current)
+        if isinstance(current, bool):
+            return VBoolean(current)
+
+
+
+
 def oper_print (v1):
-    print v1
-    return VNone()
+    if hasattr(v1, 'type'):
+        if v1.type == "array":
+            newArray = []
+            for each in v1.content:
+                newArray.append(each._value.value)
+            print newArray
+            return VNone()
+    else:
+        print v1
+        return VNone()
 
 def oper_length(v1):
     if v1.type == "string":
@@ -909,32 +927,40 @@ def parse_imp (input):
     pCALL1 = pIDENTIFIER + pEXPR
     pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
 
-    # pARRAY = "(" + Keyword("new-array") + pEXPR + ")"
-    # pARRAY.setParseAction(lambda result: EArray(result[2]))
-
     # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
     # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
 
-    pARRAY = "[" + pEXPRS+ "]"
-    pARRAY.setParseAction(lambda result: EArray(result[1]))
+
+    pARRAYITEM = "," + pEXPR
+    pARRAYITEM.setParseAction(lambda result: (result[1]))
+
+    pARRAYITEMS = ZeroOrMore(pARRAYITEM)
+    pARRAYITEMS.setParseAction(lambda result: [result])
+
+    pARRAY = "[" + pEXPR + pARRAYITEMS + "]"
+    pARRAY.setParseAction(lambda result: EArray(result[1],result[2]))
 
     pDICTPAIR = pNAME + ":" + pEXPR
     pDICTPAIR.setParseAction(lambda result: (result[0],result[2]))
 
-    pDICTS = OneOrMore(pDICTPAIR)
+    pDICTPAIRWITHCOMMA = "," + pNAME + ":" + pEXPR
+    pDICTPAIRWITHCOMMA.setParseAction(lambda result: (result[1],result[3]))
+
+    pDICTS = ZeroOrMore(pDICTPAIRWITHCOMMA)
     pDICTS.setParseAction(lambda result: [ result ])
 
-    pDICT = "{" + pDICTS + "}"
-    pDICT.setParseAction(lambda result:EDict(result[1]))
+    pDICT = "{" + pDICTPAIR + pDICTS + "}"
+    pDICT.setParseAction(lambda result:EDict(result[1],result[2]))
 
     pEXPR2P = "(" + pEXPR2 + ")"
     pEXPR2P.setParseAction(lambda result: result[1])
 
+    pACCESS = pNAME + "[" + pEXPR + "]"
+    pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1  )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
-
 
     pDECL_VAR_E = "var" + pNAME + ";"
     pDECL_VAR_E.setParseAction(lambda result: (result[1], EValue(VNone)))
