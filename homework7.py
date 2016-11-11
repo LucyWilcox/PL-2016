@@ -1032,8 +1032,7 @@ def parse_imp (input):
     return result    # the first element of the result is the expression
 
 
-def tryImp(inp):
-    env = initial_env_imp()
+def tryImp(env, inp):
     try:
         result = parse_imp(inp)
 
@@ -1065,11 +1064,11 @@ def shell_imp ():
 
     print "Homework 6 - Imp Language"
     print "#quit to quit, #abs to see abstract representation"
+    env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
         print fileName
         f = open(fileName, 'r')
-        # readFile = f.read()
         for line in f:
             tryImp(line)
     else:
@@ -1084,7 +1083,7 @@ def shell_imp ():
                     line += inp + " "
                     inp = raw_input(".... ")
                 inp = line
-            tryImp(inp)
+            tryImp(env,inp)
                 
 
 shell_imp ()
