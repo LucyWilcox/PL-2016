@@ -121,7 +121,6 @@ class ECall (Exp):
     def __init__ (self,fun,exps):
         self._fun = fun
         self._args = exps
-        print fun, exps, "ECALL"
 
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
@@ -210,27 +209,34 @@ class EWhile (Exp):
 
 class EFor (Exp):
 
-    def __init__ (self, init, cond, incre, exp):
-        self._init = init
-        self._cond = cond
-        self._incre = incre
+    # def __init__ (self, init, cond, incre, exp):
+    #     self._init = init
+    #     self._cond = cond
+    #     self._incre = incre
+    #     self._exp = exp
+
+    def __init__ (self, i, exp, body):
+        self._i = i
+        self._body = body
         self._exp = exp
 
     def __str__ (self):
-        return "EFor({},{},{},{})".format(str(self._init), str(self._cond), str(self._incre), str(self._exp))
+        return "EFor({},{},{},{})".format(str(self._i), str(self._body), str(self._exp))
 
     def eval (self,env):
-        if self._init[0] != ";":
-            for i in range(len(self._init[0]) - 1):
-                v = self._init[i][1].eval(env)
-                env.insert(0,(self._init[i][0],VRefCell(v)))
-        c = self._cond.eval(env)
-        while c.value:
-            self._exp.eval(env)
-            self._incre.eval(env)
-            c = self._cond.eval(env)
-            if c.type != "boolean":
-                raise Exception ("Runtime error: while condition not a Boolean")
+        print self._body, self._exp, self._i
+
+        # if self._init[0] != ";":
+        #     for i in range(len(self._init[0]) - 1):
+        #         v = self._init[i][1].eval(env)
+        #         env.insert(0,(self._init[i][0],VRefCell(v)))
+        # c = self._cond.eval(env)
+        # while c.value:
+        #     self._exp.eval(env)
+        #     self._incre.eval(env)
+        #     c = self._cond.eval(env)
+        #     if c.type != "boolean":
+        #         raise Exception ("Runtime error: while condition not a Boolean")
   
 class EProcedure (Exp):
     def __init__ (self,params,body):
@@ -930,7 +936,7 @@ def parse_imp (input):
     pEXPR2P.setParseAction(lambda result: result[1])
 
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1  )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
@@ -962,8 +968,11 @@ def parse_imp (input):
     pSTMT_WHILE = "while (" + pEXPR2 + ")" + pSTMT
     pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[3]))
 
-    pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
-    pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
+    # pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
+    # pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
+
+    pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
+    pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
 
     pSTMT_PRINT = "print" + pEXPR2 + ";"
     pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
