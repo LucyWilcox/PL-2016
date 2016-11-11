@@ -1067,10 +1067,9 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        print fileName
         f = open(fileName, 'r')
         for line in f:
-            tryImp(line)
+            tryImp(env,line)
     else:
         while True:
             inp = raw_input("imp> ")
