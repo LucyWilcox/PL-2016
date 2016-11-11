@@ -1032,47 +1032,59 @@ def parse_imp (input):
     return result    # the first element of the result is the expression
 
 
+def tryImp(inp):
+    env = initial_env_imp()
+    try:
+        result = parse_imp(inp)
+
+        if result["result"] == "statement":
+            stmt = result["stmt"]
+            # print "Abstract representation:", exp
+            v = stmt.eval(env)
+
+        elif result["result"] == "abstract":
+            print result["stmt"]
+
+        elif result["result"] == "quit":
+            return
+
+        elif result["result"] == "declaration":
+            (name,expr) = result["decl"]
+            v = expr.eval(env)
+            env.insert(0,(name,VRefCell(v)))
+            print "{} defined".format(name)
+
+    except Exception as e:
+        print "Exception: {}".format(e)
+
+
 def shell_imp ():
+
     # A simple shell
     # Repeatedly read a line of input, parse it, and evaluate the result
 
     print "Homework 6 - Imp Language"
     print "#quit to quit, #abs to see abstract representation"
-    env = initial_env_imp()
+    if len(sys.argv) == 2:
+        fileName = sys.argv[1]
+        print fileName
+        f = open(fileName, 'r')
+        # readFile = f.read()
+        for line in f:
+            tryImp(line)
+    else:
+        while True:
+            inp = raw_input("imp> ")
 
-    while True:
-        inp = raw_input("imp> ")
-
-        if inp.startswith("#multi"):
-            # multi-line statement
-            line = ""
-            inp = raw_input(".... ")
-            while inp:
-                line += inp + " "
+            if inp.startswith("#multi"):
+                # multi-line statement
+                line = ""
                 inp = raw_input(".... ")
-            inp = line
-            
-        try:
-            result = parse_imp(inp)
-
-            if result["result"] == "statement":
-                stmt = result["stmt"]
-                # print "Abstract representation:", exp
-                v = stmt.eval(env)
-
-            elif result["result"] == "abstract":
-                print result["stmt"]
-
-            elif result["result"] == "quit":
-                return
-
-            elif result["result"] == "declaration":
-                (name,expr) = result["decl"]
-                v = expr.eval(env)
-                env.insert(0,(name,VRefCell(v)))
-                print "{} defined".format(name)
-
-        except Exception as e:
-            print "Exception: {}".format(e)
+                while inp:
+                    line += inp + " "
+                    inp = raw_input(".... ")
+                inp = line
+            tryImp(inp)
+                
 
 shell_imp ()
