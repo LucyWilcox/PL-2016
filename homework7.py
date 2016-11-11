@@ -96,10 +96,7 @@ class ELet (Exp):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
 
     def eval (self,env):
-        print "$$"
         new_env = [ (id,e.eval(env)) for (id,e) in self._bindings] + env
-        print self._e2, "E2"
-        print new_env, "NEWENV"
         return self._e2.eval(new_env)
 
 class EId (Exp):
@@ -124,14 +121,14 @@ class ECall (Exp):
     def __init__ (self,fun,exps):
         self._fun = fun
         self._args = exps
+        print fun, exps, "ECALL"
 
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),",".join(str(e) for e in self._args))
 
     def eval (self,env):
-        #EFunction([['x', 'y']],EId(x))
-        print self._fun,"before eval"
         f = self._fun.eval(env)
+
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -144,7 +141,6 @@ class ECall (Exp):
             # new_args = [x.eval(env) for x in self._args]
             # new_vals = zip(f.params, new_args)
             # new_env = new_vals + f.env
-            print "HEY"
             new_env = zip(f.params,args) + f.env
         return f.body.eval(new_env)
 
@@ -527,7 +523,6 @@ def oper_zero (v1):
     raise Exception ("Runtime error: type error in zero?")
 
 def oper_deref (v1):
-    print v1,"v1***************"
     if v1.type == "ref":
         return v1.content
     raise Exception ("Runtime error: dereferencing a non-reference value")
@@ -852,7 +847,6 @@ def parse_imp (input):
 
     pEXPR = Forward()
     pEXPR2 = Forward()
-    # pEXPR3 = Forward()
     pSTMT_BLOCK = Forward()
 
     pEXPRS = ZeroOrMore(pEXPR)
@@ -867,9 +861,7 @@ def parse_imp (input):
         return ELet(bindings,body)
 
     def mkLetBody (bindings,body):
-        print "LET", bindings, body
         bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
-        print bindings, body
         return ELet(bindings,body)
 
     # def letToFun(result):
@@ -888,7 +880,7 @@ def parse_imp (input):
             first = ECall(result[1][i][0], [first, result[1][i][1]])
         return first
 
-    pFUN = Keyword("fun") + "(" + pNAMES + ")" + pEXPR2
+    pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT_BLOCK
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
     pBINDINGCAR = "," + pNAME + "=" + pEXPR2
@@ -897,11 +889,7 @@ def parse_imp (input):
     pBINDINGCON = pNAME + "=" + pEXPR2
     pBINDINGCON.setParseAction(lambda result: (result[0], result[2]))
 
-    def yeah(res):
-        print res, 'RES'
-
     pBINDINGS = pBINDINGCON  + ZeroOrMore(pBINDINGCAR)
-    # pBINDINGS.setParseAction(yeah)
     pBINDINGS.setParseAction(lambda result: [result])
 
     pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
@@ -942,12 +930,13 @@ def parse_imp (input):
     pEXPR2P.setParseAction(lambda result: result[1])
 
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER )
 
-    pEXPR2 << ( pIF | pCALL | pCALL1 | pEXPR )
+    pEXPR2 << ( pIF | pCALL | pEXPR)
 
 
-    # pEXPR << ( pINTEGER | pARRAY | pDICT | pSTRING | pWITH | pBOOLEAN | pNAME | pIDENTIFIER | pIF  | pLET | pFUN | pCALL | pCALL1 )
+    pDECL_VAR_E = "var" + pNAME + ";"
+    pDECL_VAR_E.setParseAction(lambda result: (result[1], EValue(VNone)))
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR2 + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
@@ -959,7 +948,7 @@ def parse_imp (input):
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
     # to add to pDECL later)
-    pDECL = ( pDECL_VAR | pDECL_PROCEDURE | NoMatch() | ";" )
+    pDECL = ( pDECL_VAR_E | pDECL_VAR | pDECL_PROCEDURE | NoMatch() | ";" )
 
     pDECLS = ZeroOrMore(pDECL)
     pDECLS.setParseAction(lambda result: [result])
@@ -998,7 +987,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK )
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK | pEXPR2)
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
@@ -1060,7 +1049,7 @@ def shell_imp ():
                 v = expr.eval(env)
                 env.insert(0,(name,VRefCell(v)))
                 print "{} defined".format(name)
-                    
+
         except Exception as e:
             print "Exception: {}".format(e)
 
