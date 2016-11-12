@@ -914,8 +914,11 @@ def parse_imp (input):
     pCALL =  pEXPR + pCALL1S 
     pCALL.setParseAction(multiCall)
 
-    pCALL1 = pIDENTIFIER + pEXPR
+    pCALL1 = pIDENTIFIER + pEXPR2
     pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
+
+    pNOT = "not" + pEXPR2
+    pNOT.setParseAction(lambda result: EPrimCall(oper_not, [result[1]]))
 
     pARRAYITEM = "," + pEXPR
     pARRAYITEM.setParseAction(lambda result: (result[1]))
@@ -944,7 +947,7 @@ def parse_imp (input):
     pACCESS = pNAME + "[" + pEXPR + "]"
     pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
