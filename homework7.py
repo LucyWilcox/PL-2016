@@ -524,11 +524,11 @@ def oper_update (v1,v2):
 def oper_update_arr(array,index,update):
     if array.type == "ref":
         if isinstance(update.value, int):
-            array.content.content[index.value] = VInteger(update.value)
+            array.content.value[index.value] = EValue(VInteger(update.value))
         if isinstance(update.value, str):
-            array.content.content[index.value] = VString(update.value)
+            array.content.value[index.value] = EValue(VString(update.value))
         if isinstance(update.value, bool):
-            array.content.content[index.value] = VBoolean(update.value)
+            array.content.value[index.value] = EValue(VBoolean(update.value))
         return VNone()
 
 def oper_access_arr(arrayOrDict,index):
@@ -546,6 +546,7 @@ def forEachPrint(v1):
         if v1.type == "array":
             newArray = []
             for each in v1.value:
+                print each
                 newArray.append(each._value.value)
             print newArray
             return VNone()
@@ -997,7 +998,7 @@ def parse_imp (input):
     pSTMT_PRINT.setParseAction(printStmEval)
     # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]+result[2]]));
 
-    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "=" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
@@ -1079,15 +1080,16 @@ def shell_imp ():
         line = ""
         for each in mylist:
             if each.endswith("};"):
-                line+=each
+                line += each
                 tryImp(env,line)
                 line = ""
                 print line
             else:
-                line+=each
+                line += each
 
         tryImp(env,"main();")
 
+        #testing purpose
         # for each in f:
         #     tryImp(env,each)
 
