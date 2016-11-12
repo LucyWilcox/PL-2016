@@ -351,7 +351,7 @@ class VClosure (Value):
         
 class VDict(Value):
     def __init__ (self,content,env):
-        self.content = content
+        self.value = value
         self.type = "dict"
         self.env = env
 
@@ -524,11 +524,11 @@ def oper_update (v1,v2):
 def oper_update_arr(array,index,update):
     if array.type == "ref":
         if isinstance(update.value, int):
-            array.content.content[index.value] = VInteger(update.value)
+            array.content.value[index.value] = EValue(VInteger(update.value))
         if isinstance(update.value, str):
-            array.content.content[index.value] = VString(update.value)
+            array.content.value[index.value] = EValue(VString(update.value))
         if isinstance(update.value, bool):
-            array.content.content[index.value] = VBoolean(update.value)
+            array.content.value[index.value] = EValue(VBoolean(update.value))
         return VNone()
 
 def oper_access_arr(arrayOrDict,index):
@@ -541,7 +541,7 @@ def oper_access_arr(arrayOrDict,index):
         if isinstance(current, bool):
             return VBoolean(current)
 
-def oper_print (v1):
+def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
             newArray = []
@@ -554,6 +554,13 @@ def oper_print (v1):
             return VNone()
     print v1
     return VNone()
+
+def oper_print(*args):
+    if len(args) == 1:
+        forEachPrint(args[0])
+    else:
+        for eachArg in args:
+            forEachPrint(eachArg)
 
 def oper_length(v1):
     if v1.type == "string":
@@ -971,10 +978,26 @@ def parse_imp (input):
     pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
 
-    pSTMT_PRINT = "print" + pEXPR2 + ";"
-    pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
+    pSTMT_PRINT_STMS = "," + pEXPR2
+    pSTMT_PRINT_STMS.setParseAction(lambda result: [ result[1] ])
 
-    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
+    pSTMT_PRINT_ZERO = ZeroOrMore(pSTMT_PRINT_STMS)
+    pSTMT_PRINT_ZERO.setParseAction(lambda result: [ result ])
+
+    def printStmEval(result):
+        newArray = []
+        newArray.append(result[1])
+        for i in result[2]:
+            newArray.append(i)
+        return EPrimCall(oper_print,newArray)
+
+    pSTMT_PRINT = "print" + pEXPR2 + pSTMT_PRINT_ZERO + ";"
+    pSTMT_PRINT.setParseAction(printStmEval)
+
+    # pSTMT_PRINT = "print" + pEXPR2 + ";"
+    # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
+
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "=" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
@@ -1016,6 +1039,7 @@ def parse_imp (input):
     return result    # the first element of the result is the expression
 
 
+
 def tryImp(env, inp):
     try:
         result = parse_imp(inp)
@@ -1051,10 +1075,9 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        print fileName
         f = open(fileName, 'r')
         for line in f:
-            tryImp(line)
+            tryImp(env,line)
     else:
         while True:
             inp = raw_input("imp> ")
