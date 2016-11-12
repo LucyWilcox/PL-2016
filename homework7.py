@@ -1,4 +1,8 @@
 ############################################################
+# Simple imperative language
+# C-like surface syntac
+# with S-expression syntax for expressions
+# (no recursive closures)
 #
 import random
 """
@@ -105,7 +109,6 @@ class EId (Exp):
         return "EId({})".format(self._id)
 
     def eval (self,env):
-        print self._id, env, "HHH"
         for (id,v) in env:
             if self._id == id:
                 return v
@@ -144,7 +147,6 @@ class EFunction (Exp):
     # Creates an anonymous function
 
     def __init__ (self,params,body):
-        print "hey"
         self._params = params
         self._body = body
 
@@ -349,7 +351,7 @@ class VClosure (Value):
         
 class VDict(Value):
     def __init__ (self,content,env):
-        self.value = content
+        self.content = content
         self.type = "dict"
         self.env = env
 
@@ -522,11 +524,11 @@ def oper_update (v1,v2):
 def oper_update_arr(array,index,update):
     if array.type == "ref":
         if isinstance(update.value, int):
-            array.content.value[index.value] = EValue(VInteger(update.value))
+            array.content.content[index.value] = VInteger(update.value)
         if isinstance(update.value, str):
-            array.content.value[index.value] = EValue(VString(update.value))
+            array.content.content[index.value] = VString(update.value)
         if isinstance(update.value, bool):
-            array.content.value[index.value] = EValue(VBoolean(update.value))
+            array.content.content[index.value] = VBoolean(update.value)
         return VNone()
 
 def oper_access_arr(arrayOrDict,index):
@@ -539,12 +541,11 @@ def oper_access_arr(arrayOrDict,index):
         if isinstance(current, bool):
             return VBoolean(current)
 
-def forEachPrint(v1):
+def oper_print (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
             newArray = []
             for each in v1.value:
-                print each
                 newArray.append(each._value.value)
             print newArray
             return VNone()
@@ -553,13 +554,6 @@ def forEachPrint(v1):
             return VNone()
     print v1
     return VNone()
-
-def oper_print (*args):
-    if len(args)==1:
-        forEachPrint(args[0])
-    else:
-        for eachArg in args:
-            forEachPrint(eachArg)
 
 def oper_length(v1):
     if v1.type == "string":
@@ -876,7 +870,6 @@ def parse_imp (input):
 
 
     def mkFunBody (params,body):
-        print "mxbx"
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
         return ELet(bindings,body)
 
@@ -944,7 +937,7 @@ def parse_imp (input):
     pACCESS = pNAME + "[" + pEXPR + "]"
     pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER  )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
@@ -978,25 +971,10 @@ def parse_imp (input):
     pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
 
-    pSTMT_PRINT_STMS = "," + pEXPR2
-    pSTMT_PRINT_STMS.setParseAction(lambda result: [ result[1] ])
+    pSTMT_PRINT = "print" + pEXPR2 + ";"
+    pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
-    pSTMT_PRINT_ZERO = ZeroOrMore(pSTMT_PRINT_STMS)
-    pSTMT_PRINT_ZERO.setParseAction(lambda result: [ result ])
-
-    def printStmEval(result):
-        print result[1],"came heere"
-        newArray = []
-        newArray.append(result[1])
-        for i in result[2]:
-            newArray.append(i)
-        return EPrimCall(oper_print,newArray)
-
-    pSTMT_PRINT = "print" + pEXPR2 + pSTMT_PRINT_ZERO + ";"
-    pSTMT_PRINT.setParseAction(printStmEval)
-    # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]+result[2]]));
-
-    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "=" + pEXPR + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
@@ -1054,7 +1032,6 @@ def tryImp(env, inp):
             return
 
         elif result["result"] == "declaration":
-            print "hheheh"
             (name,expr) = result["decl"]
             v = expr.eval(env)
             env.insert(0,(name,VRefCell(v)))
@@ -1074,24 +1051,10 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        with open(fileName) as f:
-            mylist = f.read().splitlines()
-        line = ""
-        for each in mylist:
-            if each.endswith("};"):
-                line += each
-                tryImp(env,line)
-                line = ""
-                print line
-            else:
-                line += each
-
-        tryImp(env,"main();")
-
-        #testing purpose
-        # for each in f:
-        #     tryImp(env,each)
-
+        print fileName
+        f = open(fileName, 'r')
+        for line in f:
+            tryImp(line)
     else:
         while True:
             inp = raw_input("imp> ")
@@ -1104,7 +1067,6 @@ def shell_imp ():
                     line += inp + " "
                     inp = raw_input(".... ")
                 inp = line
-                print inp
             tryImp(env,inp)
                 
 
