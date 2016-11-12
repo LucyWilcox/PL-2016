@@ -1,8 +1,4 @@
 ############################################################
-# Simple imperative language
-# C-like surface syntac
-# with S-expression syntax for expressions
-# (no recursive closures)
 #
 import random
 """
@@ -109,6 +105,7 @@ class EId (Exp):
         return "EId({})".format(self._id)
 
     def eval (self,env):
+        print self._id, env, "HHH"
         for (id,v) in env:
             if self._id == id:
                 return v
@@ -147,6 +144,7 @@ class EFunction (Exp):
     # Creates an anonymous function
 
     def __init__ (self,params,body):
+        print "hey"
         self._params = params
         self._body = body
 
@@ -554,14 +552,13 @@ def forEachPrint(v1):
             return VNone()
     print v1
     return VNone()
+
 def oper_print (*args):
     if len(args)==1:
         forEachPrint(args[0])
     else:
         for eachArg in args:
             forEachPrint(eachArg)
-
-
 
 def oper_length(v1):
     if v1.type == "string":
@@ -878,6 +875,7 @@ def parse_imp (input):
 
 
     def mkFunBody (params,body):
+        print "mxbx"
         bindings = [ (p,ERefCell(EId(p))) for p in params ]
         return ELet(bindings,body)
 
@@ -1055,6 +1053,7 @@ def tryImp(env, inp):
             return
 
         elif result["result"] == "declaration":
+            print "hheheh"
             (name,expr) = result["decl"]
             v = expr.eval(env)
             env.insert(0,(name,VRefCell(v)))
