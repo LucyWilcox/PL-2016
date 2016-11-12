@@ -1043,6 +1043,7 @@ def parse_imp (input):
 
 
 
+
 def tryImp(env, inp):
     try:
         result = parse_imp(inp)
@@ -1078,9 +1079,23 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        f = open(fileName, 'r')
-        for line in f:
-            tryImp(env,line)
+        with open(fileName) as f:
+            mylist = f.read().splitlines()
+        line = ""
+        for each in mylist:
+            if each.endswith("};"):
+                line+=each
+                tryImp(env,line)
+                line = ""
+                print line
+            else:
+                line+=each
+
+        tryImp(env,"main();")
+
+        # for each in f:
+        #     tryImp(env,each)
+
     else:
         while True:
             inp = raw_input("imp> ")
@@ -1093,6 +1108,7 @@ def shell_imp ():
                     line += inp + " "
                     inp = raw_input(".... ")
                 inp = line
+                print inp
             tryImp(env,inp)
                 
 
