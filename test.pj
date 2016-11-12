@@ -1,11 +1,14 @@
-def test(){
- print 23;	
+def count_to_zero(n){
+ while ( n >= 0){
+ print n;
+ n = n - 1;	
+ }
 };
 
 def test1(){
 	print 22;
 };
 def main () {
- test();
- print 22;
+ print "hello world";
+ count_to_zero(10);
 };
