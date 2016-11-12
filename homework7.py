@@ -349,7 +349,7 @@ class VClosure (Value):
         
 class VDict(Value):
     def __init__ (self,content,env):
-        self.content = content
+        self.value = content
         self.type = "dict"
         self.env = env
 
@@ -539,7 +539,7 @@ def oper_access_arr(arrayOrDict,index):
         if isinstance(current, bool):
             return VBoolean(current)
 
-def oper_print (v1):
+def forEachPrint(v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
             newArray = []
@@ -552,6 +552,14 @@ def oper_print (v1):
             return VNone()
     print v1
     return VNone()
+def oper_print (*args):
+    if len(args)==1:
+        forEachPrint(args[0])
+    else:
+        for eachArg in args:
+            forEachPrint(eachArg)
+
+
 
 def oper_length(v1):
     if v1.type == "string":
@@ -987,8 +995,22 @@ def parse_imp (input):
     pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
 
-    pSTMT_PRINT = "print" + pEXPR2 + ";"
-    pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
+    pSTMT_PRINT_STMS = "," + pEXPR
+    pSTMT_PRINT_STMS.setParseAction(lambda result: [ result[1] ])
+
+    pSTMT_PRINT_ZERO = ZeroOrMore(pSTMT_PRINT_STMS)
+    pSTMT_PRINT_ZERO.setParseAction(lambda result: [ result ])
+
+    def printStmEval(result):
+        newArray = []
+        newArray.append(result[1])
+        for i in result[2]:
+            newArray.append(i)
+        return EPrimCall(oper_print,newArray)
+
+    pSTMT_PRINT = "print" + pEXPR + pSTMT_PRINT_ZERO + ";"
+    pSTMT_PRINT.setParseAction(printStmEval)
+    # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]+result[2]]));
 
     pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "<-" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
