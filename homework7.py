@@ -979,20 +979,21 @@ def parse_imp (input):
     pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
 
-    pSTMT_PRINT_STMS = "," + pEXPR
+    pSTMT_PRINT_STMS = "," + pEXPR2
     pSTMT_PRINT_STMS.setParseAction(lambda result: [ result[1] ])
 
     pSTMT_PRINT_ZERO = ZeroOrMore(pSTMT_PRINT_STMS)
     pSTMT_PRINT_ZERO.setParseAction(lambda result: [ result ])
 
     def printStmEval(result):
+        print result[1],"came heere"
         newArray = []
         newArray.append(result[1])
         for i in result[2]:
             newArray.append(i)
         return EPrimCall(oper_print,newArray)
 
-    pSTMT_PRINT = "print" + pEXPR + pSTMT_PRINT_ZERO + ";"
+    pSTMT_PRINT = "print" + pEXPR2 + pSTMT_PRINT_ZERO + ";"
     pSTMT_PRINT.setParseAction(printStmEval)
     # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]+result[2]]));
 
@@ -1073,9 +1074,23 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        f = open(fileName, 'r')
-        for line in f:
-            tryImp(env,line)
+        with open(fileName) as f:
+            mylist = f.read().splitlines()
+        line = ""
+        for each in mylist:
+            if each.endswith("};"):
+                line+=each
+                tryImp(env,line)
+                line = ""
+                print line
+            else:
+                line+=each
+
+        tryImp(env,"main();")
+
+        # for each in f:
+        #     tryImp(env,each)
+
     else:
         while True:
             inp = raw_input("imp> ")
@@ -1088,6 +1103,7 @@ def shell_imp ():
                     line += inp + " "
                     inp = raw_input(".... ")
                 inp = line
+                print inp
             tryImp(env,inp)
                 
 
