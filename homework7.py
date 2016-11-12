@@ -127,7 +127,6 @@ class ECall (Exp):
 
     def eval (self,env):
         f = self._fun.eval(env)
-        print f
         if f.type != "function":
             raise Exception("Runtime error: trying to call a non-function")
         args = [ e.eval(env) for e in self._args]
@@ -534,7 +533,7 @@ def oper_update_arr(array,index,update):
 
 def oper_access_arr(arrayOrDict,index):
     if arrayOrDict.type == "ref":
-        current = arrayOrDict.content.content[index.value]._value.value
+        current = arrayOrDict.content.value[index.value]._value.value
         if isinstance(current, int):
             return VInteger(current)
         if isinstance(current, str):
@@ -878,16 +877,6 @@ def parse_imp (input):
         bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
         return ELet(bindings,body)
 
-    # def letToFun(result):
-    #     func = result[4]
-    #     binds = result[2]
-    #     params = []
-    #     vals = []
-    #     for p, v in binds:
-    #         params.append(p)
-    #         vals.append(v)
-    #     return ECall(EFunction(params, func), vals)
-
     def multiCall(result):
         first = ECall(result[1][0][0],[result[0], result[1][0][1]])
         for i in range(1, len(result[1])):
@@ -907,7 +896,6 @@ def parse_imp (input):
     pBINDINGS.setParseAction(lambda result: [result])
 
     pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
-    # pLET.setParseAction(letToFun)
     pLET.setParseAction(lambda result: mkLetBody(result[2], result[4]))
 
     pCALLG = pIDENTIFIER + pEXPR2
@@ -921,10 +909,6 @@ def parse_imp (input):
 
     pCALL1 = pIDENTIFIER + pEXPR
     pCALL1.setParseAction(lambda result: ECall(result[0], [result[1]]))
-
-    # pWITH = "(" + Keyword("with") + pEXPR + pEXPR +")"
-    # pWITH.setParseAction(lambda result: EWithObj(result[2],result[3]))
-
 
     pARRAYITEM = "," + pEXPR
     pARRAYITEM.setParseAction(lambda result: (result[1]))
@@ -965,7 +949,7 @@ def parse_imp (input):
 
     pSTMT = Forward()
 
-    pDECL_PROCEDURE = "procedure" + pNAME + "(" + pNAMES + ")" + pSTMT
+    pDECL_PROCEDURE = "def" + pNAME + "(" + pNAMES + ")" + pSTMT
     pDECL_PROCEDURE.setParseAction(lambda result: (result[1], EProcedure(result[3], mkFunBody(result[3], result[5]))))
 
     # hack to get pDECL to match only PDECL_VAR (but still leave room
@@ -983,9 +967,6 @@ def parse_imp (input):
    
     pSTMT_WHILE = "while (" + pEXPR2 + ")" + pSTMT
     pSTMT_WHILE.setParseAction(lambda result: EWhile(result[1],result[3]))
-
-    # pSTMT_FOR = "for" + pDECLS + pEXPR + ";" + pSTMT + pSTMT
-    # pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[2], result[4], result[5]))
 
     pSTMT_FOR = "for (" + pNAME + "in" + pEXPR2 + ")" + pSTMT
     pSTMT_FOR.setParseAction(lambda result: EFor(result[1], result[3], result[5]))
