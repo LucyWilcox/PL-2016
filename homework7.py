@@ -944,7 +944,7 @@ def parse_imp (input):
     pACCESS = pNAME + "[" + pEXPR + "]"
     pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pCALL1 | pIDENTIFIER  )
+    pEXPR << ( pEXPR2P | pINTEGER | pLET | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
 
     pEXPR2 << ( pIF | pCALL | pEXPR)
 
