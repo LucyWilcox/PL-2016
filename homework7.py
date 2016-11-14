@@ -901,7 +901,7 @@ def parse_imp (input):
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
-    pFUNR = Keyword("fun") + pIDENTIFIER + "(" + pNAMES + ")" + pSTMT
+    pFUNR = Keyword("fun") + pNAME + "(" + pNAMES + ")" + pSTMT
     pFUNR.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5]), result[1]))
 
     pEXPR2CAR = "," + pEXPR2
