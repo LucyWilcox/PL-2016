@@ -146,14 +146,17 @@ class ECall (Exp):
 class EFunction (Exp):
     # Creates an anonymous function
 
-    def __init__ (self,params,body):
+    def __init__ (self,params,body, name = ""):
         self._params = params
         self._body = body
+        self._name = name
 
     def __str__ (self):
         return "EFunction([{}],{})".format(",".join(self._params),str(self._body))
 
     def eval (self,env):
+        if self._name!="":
+            env.insert(0,(self._name, VClosure(self._params,self._body,env)))
         return VClosure(self._params,self._body,env)
 
 
@@ -511,6 +514,7 @@ def oper_zero (v1):
     raise Exception ("Runtime error: type error in zero?")
 
 def oper_deref (v1):
+    print v1, v1.type
     if v1.type == "ref":
         return v1.content
     raise Exception ("Runtime error: dereferencing a non-reference value")
@@ -897,6 +901,9 @@ def parse_imp (input):
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
+    pFUNR = Keyword("fun") + pIDENTIFIER + "(" + pNAMES + ")" + pSTMT
+    pFUNR.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5]), result[1]))
+
     pEXPR2CAR = "," + pEXPR2
     pEXPR2CAR.setParseAction(lambda result: result[1])
 
@@ -962,7 +969,7 @@ def parse_imp (input):
 
     pEXPR << ( pEXPR2P | pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 )
 
-    pEXPR2 << ( pLET | pFUN | pFUNCALL | pIF | pCALL | pEXPR)
+    pEXPR2 << ( pLET | pFUN | pFUNR | pFUNCALL | pIF | pCALL | pEXPR)
 
     pDECL_VAR_E = "var" + pNAME + ";"
     pDECL_VAR_E.setParseAction(lambda result: (result[1], EValue(VNone)))
