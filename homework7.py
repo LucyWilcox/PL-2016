@@ -154,7 +154,7 @@ class EFunction (Exp):
         return "EFunction([{}],{})".format(",".join(self._params),str(self._body))
 
     def eval (self,env):
-        return VClosure(self._params,sprielf._body,env)
+        return VClosure(self._params,self._body,env)
 
 
 class ERefCell (Exp):
@@ -852,7 +852,10 @@ def parse_imp (input):
     # A name is like an identifier but it does not return an EId...
     pNAME = Word(idChars,idChars+"0123456789") #| Keyword("&\"") | Keyword("&\'")
 
-    pNAMES = ZeroOrMore(pNAME)
+    pNAMECON = "," + pNAME
+    pNAMECON.setParseAction(lambda result: result[1])
+
+    pNAMES = pNAME + ZeroOrMore(pNAMECON)
     pNAMES.setParseAction(lambda result: [result])
 
     pINTEGER = Word("0123456789")
@@ -868,6 +871,7 @@ def parse_imp (input):
     pEXPR = Forward()
     pEXPR2 = Forward()
     pSTMT_BLOCK = Forward()
+    pSTMT = Forward()
 
     pEXPRS = ZeroOrMore(pEXPR)
     pEXPRS.setParseAction(lambda result: [result])
@@ -890,8 +894,17 @@ def parse_imp (input):
             first = ECall(result[1][i][0], [first, result[1][i][1]])
         return first
 
-    pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT_BLOCK
+    pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
+
+    pEXPR2CAR = "," + pEXPR2
+    pEXPR2CAR.setParseAction(lambda result: result[1])
+
+    pEXPR2MULTI = pEXPR2 + ZeroOrMore(pEXPR2CAR)
+    pEXPR2MULTI.setParseAction(lambda result: [result])
+
+    pFUNCALL = pIDENTIFIER + "(" + pEXPR2MULTI + ")"
+    pFUNCALL.setParseAction(lambda result: ECall(result[0], result[2]))
 
     pBINDINGCAR = "," + pNAME + "=" + pEXPR2
     pBINDINGCAR.setParseAction(lambda result: (result[1], result[3]))
@@ -902,7 +915,7 @@ def parse_imp (input):
     pBINDINGS = pBINDINGCON  + ZeroOrMore(pBINDINGCAR)
     pBINDINGS.setParseAction(lambda result: [result])
 
-    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR
+    pLET = Keyword("let") + "(" + pBINDINGS + ")" + pEXPR2
     pLET.setParseAction(lambda result: mkLetBody(result[2], result[4]))
 
     pCALLG = pIDENTIFIER + pEXPR2
@@ -947,17 +960,15 @@ def parse_imp (input):
     pACCESS = pNAME + "[" + pEXPR + "]"
     pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pLET | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pFUN | pIDENTIFIER | pCALL1 )
+    pEXPR << ( pEXPR2P | pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 )
 
-    pEXPR2 << ( pIF | pCALL | pEXPR)
+    pEXPR2 << ( pLET | pFUN | pFUNCALL | pIF | pCALL | pEXPR)
 
     pDECL_VAR_E = "var" + pNAME + ";"
     pDECL_VAR_E.setParseAction(lambda result: (result[1], EValue(VNone)))
 
     pDECL_VAR = "var" + pNAME + "=" + pEXPR2 + ";"
     pDECL_VAR.setParseAction(lambda result: (result[1],result[3]))
-
-    pSTMT = Forward()
 
     pDECL_PROCEDURE = "def" + pNAME + "(" + pNAMES + ")" + pSTMT
     pDECL_PROCEDURE.setParseAction(lambda result: (result[1], EProcedure(result[3], mkFunBody(result[3], result[5]))))
@@ -1060,6 +1071,7 @@ def tryImp(env, inp):
             return
 
         elif result["result"] == "declaration":
+            print "HHH"
             (name,expr) = result["decl"]
             v = expr.eval(env)
             env.insert(0,(name,VRefCell(v)))

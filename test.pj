@@ -17,7 +17,18 @@ print true or false;
 print true ? 1 : 0;
 print let (a = 2) a + 2;
 print let (a = 2) (a + 2);
+print let ( a = 2, b = 4) a + b;
 print not true;
+def count_to_zero (n) 
+	{ while ( n >= 0 ) 
+		{ print n; n = n - 1} 
+	}
+}
+count_to_zero(10);
+var one_two = fun ( x, y ) { print x ; print x + y; };
+one_two(3, 4);
+
+
 };
 
 
