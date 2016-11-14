@@ -514,7 +514,6 @@ def oper_zero (v1):
     raise Exception ("Runtime error: type error in zero?")
 
 def oper_deref (v1):
-    print v1, v1.type
     if v1.type == "ref":
         return v1.content
     raise Exception ("Runtime error: dereferencing a non-reference value")
@@ -1078,7 +1077,6 @@ def tryImp(env, inp):
             return
 
         elif result["result"] == "declaration":
-            print "HHH"
             (name,expr) = result["decl"]
             v = expr.eval(env)
             env.insert(0,(name,VRefCell(v)))
