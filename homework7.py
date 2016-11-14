@@ -683,6 +683,13 @@ def oper_or(v1, v2):
             return VBoolean(False)
     raise Exception ("Runtime error: variable is not a boolean type")
 
+def oper_len(v1):
+    if v1.type =="string":
+        return VInteger(len(v1))
+    if v1.type == "array":
+        return VInteger(len(v1.value))
+
+
 ############################################################
 # IMPERATIVE SURFACE SYNTAX
 #
@@ -812,6 +819,12 @@ def initial_env_imp ():
                 VRefCell(VClosure(["x"],
                                     EPrimCall(oper_print,[EId("x")]),
                                     env))))
+    env.insert(0,
+                ("len",
+                VRefCell(VClosure(["x"],
+                                    EPrimCall(oper_len,[EId("x")]),
+                                    env))))
+
     return env
 
 
@@ -966,7 +979,10 @@ def parse_imp (input):
     pACCESS = pNAME + "[" + pEXPR + "]"
     pACCESS.setParseAction(lambda result: EPrimCall(oper_access_arr,[EId(result[0]),result[2]]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 )
+    pLEN = Keyword("len") + "(" + pNAME + ")"
+    pLEN.setParseAction(lambda result: EPrimCall(oper_len,[EId(result[2])]))
+
+    pEXPR << ( pEXPR2P | pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 | pLEN )
 
     pEXPR2 << ( pLET | pFUN | pFUNR | pFUNCALL | pIF | pCALL | pEXPR)
 
@@ -1111,8 +1127,8 @@ def shell_imp ():
         #         line+=each
 
         # tryImp(env,"main();")
-        f = open(fileName)
 
+        f = open(fileName)
         for each in f:
             tryImp(env,each)
 
