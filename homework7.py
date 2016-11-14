@@ -354,7 +354,7 @@ class VClosure (Value):
         
 class VDict(Value):
     def __init__ (self,content,env):
-        self.value = value
+        self.value = content
         self.type = "dict"
         self.env = env
 
@@ -1098,22 +1098,25 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        with open(fileName) as f:
-            mylist = f.read().splitlines()
-        line = ""
-        for each in mylist:
-            if each.endswith("};"):
-                line+=each
-                tryImp(env,line)
-                line = ""
-                print line
-            else:
-                line+=each
+        # with open(fileName) as f:
+        #     mylist = f.read().splitlines()
+        # line = ""
+        # for each in mylist:
+        #     if each.endswith("};"):
 
-        tryImp(env,"main();")
+        #         line+=each
+        #         print line
+        #         tryImp(env,line)
+        #         line = ""
+        #         print line
+        #     else:
+        #         line+=each
 
-        # for each in f:
-        #     tryImp(env,each)
+        # tryImp(env,"main();")
+        f = open(fileName)
+
+        for each in f:
+            tryImp(env,each)
 
     else:
         while True:
