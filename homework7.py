@@ -904,11 +904,15 @@ def parse_imp (input):
         bindings = [ (p[0],ERefCell(p[1])) for p in bindings ]
         return ELet(bindings,body)
 
+    def multiCallHelper(result, start, i, length):
+        if i < length:
+            start = ECall(result[1][i][0], [start, result[1][i][1]])
+            multiCallHelper(result, start, i + 1, length)
+        return start
+
     def multiCall(result):
-        first = ECall(result[1][0][0],[result[0], result[1][0][1]])
-        for i in range(1, len(result[1])):
-            first = ECall(result[1][i][0], [first, result[1][i][1]])
-        return first
+        start = ECall(result[1][0][0], [result[1][0][1], result[0]])
+        return multiCallHelper(result, start, 1, len(result[1]))
 
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))

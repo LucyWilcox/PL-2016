@@ -29,7 +29,7 @@ a[0] = 4;
 print a;
 var d = { a:1, b:2, c:3};
 print d;
-d['a']=3;
+d["a"]=3;
 print d;
 var n = 5;
 while ( n >= 0 ) { print n; n = n - 1; }
