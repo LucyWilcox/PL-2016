@@ -35,3 +35,13 @@ def main () {
     print (triple(square))(3),6561;
     print sum(100), 5050;
 };
+
+def ntimes (n) { 
+   print n;
+   print (n > 0);
+   while (n > 0) { 
+     result = 2 * result;
+     n = n - 1;
+   }
+   print n;
+};

@@ -28,6 +28,7 @@ import sys
 # Expressions
 #
 
+globalFunctionReturn = "";
 class Exp (object):
     pass
 
@@ -41,7 +42,8 @@ class EValue (Exp):
         return "EValue({})".format(self._value)
 
     def eval (self,env):
-        return self._value
+        globalFunctionReturn = self._value
+        return globalFunctionReturn
 
     
 class EPrimCall (Exp):
@@ -59,8 +61,8 @@ class EPrimCall (Exp):
 
     def eval (self,env):
         vs = [ e.eval(env) for e in self._exps ]
-        return apply(self._prim,vs)
-
+        globalFunctionReturn = apply(self._prim,vs)
+        return globalFunctionReturn
 
 class EIf (Exp):
     # Conditional expression
@@ -78,9 +80,12 @@ class EIf (Exp):
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
-            return self._then.eval(env)
+            print v.value,"value"
+            globalFunctionReturn = self._then.eval(env)
+            return globalFunctionReturn
         else:
-            return self._else.eval(env)
+            globalFunctionReturn = self._else.eval(env)
+            return globalFunctionReturn
 
 
 class ELet (Exp):
@@ -89,6 +94,7 @@ class ELet (Exp):
     # eager (call-by-avlue)
 
     def __init__ (self,bindings,e2):
+        print "came to elet"
         self._bindings = bindings
         self._e2 = e2
 
@@ -96,8 +102,12 @@ class ELet (Exp):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
 
     def eval (self,env):
+        print "came to elet eval"
+        print self._bindings,"*****"
+        print self._e2
         new_env = [ (id,e.eval(env)) for (id,e) in self._bindings] + env
-        return self._e2.eval(new_env)
+        globalFunctionReturn = self._e2.eval(new_env)
+        return globalFunctionReturn
 
 class EId (Exp):
     # identifier
@@ -111,7 +121,8 @@ class EId (Exp):
     def eval (self,env):
         for (id,v) in env:
             if self._id == id:
-                return v
+                globalFunctionReturn = v
+                return globalFunctionReturn
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
 
 
@@ -140,7 +151,12 @@ class ECall (Exp):
             # new_vals = zip(f.params, new_args)
             # new_env = new_vals + f.env
             new_env = zip(f.params,args) + f.env
-        return f.body.eval(new_env)
+
+        globalFunctionReturn = f.body.eval(new_env)
+        return globalFunctionReturn
+
+        # return EDo(f.body).eval(new_env)
+
 
 
 class EFunction (Exp):
@@ -157,7 +173,8 @@ class EFunction (Exp):
     def eval (self,env):
         if self._name!="":
             env.insert(0,(self._name, VClosure(self._params,self._body,env)))
-        return VClosure(self._params,self._body,env)
+        globalFunctionReturn = VClosure(self._params,self._body,env)
+        return globalFunctionReturn
 
 
 class ERefCell (Exp):
@@ -172,7 +189,8 @@ class ERefCell (Exp):
 
     def eval (self,env):
         v = self._initial.eval(env)
-        return VRefCell(v)
+        globalFunctionReturn = VRefCell(v)
+        return globalFunctionReturn
 
 class EDo (Exp):
 
@@ -185,9 +203,12 @@ class EDo (Exp):
     def eval (self,env):
         # default return value for do when no arguments
         v = VNone()
+        print self._exps,"exps in edo"
         for e in self._exps:
+            print e,"in edo"
             v = e.eval(env)
-        return v
+            globalFunctionReturn = v
+        return globalFunctionReturn
 
 class EWhile (Exp):
 
@@ -202,8 +223,10 @@ class EWhile (Exp):
         c = self._cond.eval(env)
         if c.type != "boolean":
             raise Exception ("Runtime error: while condition not a Boolean")
+        print c.value,"came to ewhile?"
         while c.value:
-            self._exp.eval(env)
+            globalFunctionReturn = self._exp.eval(env)
+            print globalFunctionReturn,"in while loop************************"
             c = self._cond.eval(env)
             if c.type != "boolean":
                 raise Exception ("Runtime error: while condition not a Boolean")
@@ -236,7 +259,8 @@ class EProcedure (Exp):
         return "EProcedure([{}],{})".format(",".join(self._params),str(self._body))
 
     def eval (self,env):
-        return VClosure(self._params,self._body,env)
+        globalFunctionReturn = VClosure(self._params,self._body,env)
+        return globalFunctionReturn
 
 class EArray(Exp):
     def __init__ (self,itemOne,arrayItems):
@@ -251,7 +275,8 @@ class EArray(Exp):
         return "EArray(length: {})".format(str(self._length))
 
     def eval (self,env):
-        return VArray(self._content,env)
+        globalFunctionReturn = VArray(self._content,env)
+        return globalFunctionReturn
 
 class EDict(Exp):
     def __init__ (self,firstitem,dictItems):
@@ -264,7 +289,8 @@ class EDict(Exp):
         return "EDICT(length: {})".format(str(self._length))
 
     def eval (self,env):
-        return VDict(self._dict,env)
+        globalFunctionReturn = VDict(self._dict,env)
+        return globalFunctionReturn
 
 class EObject (Exp):
     
@@ -279,7 +305,8 @@ class EObject (Exp):
     def eval (self,env):
         fields = [ (id,e.eval(env)) for (id,e) in self._fields]
         methods = [ (id,e.eval(env)) for (id,e) in self._methods]
-        return VObject(fields,methods)
+        globalFunctionReturn =  VObject(fields,methods)
+        return globalFunctionReturn
 
 class EWithObj (Exp):
     def __init__ (self,exp1,exp2):
@@ -294,7 +321,8 @@ class EWithObj (Exp):
         # if object.type != "object":
         #     raise Exception("Runtime error: expected an object")
         all_env =object.methods+object.env+env
-        return self._exp.eval(all_env)
+        globalFunctionReturn =  self._exp.eval(all_env)
+        return globalFunctionReturn
 
 
 #
@@ -574,6 +602,7 @@ def forEachPrint (v1):
     return VNone()
 
 def oper_print(*args):
+    print "came to oper print"
     if len(args) == 1:
         forEachPrint(args[0])
     else:
@@ -642,7 +671,11 @@ def oper_less(v1,v2):
     raise Exception ("Runtime error: variable is not a string or int type")
 
 def oper_greater(v1,v2):
+    print "came to oper_grater"
     if v1.type == "integer" and v2.type == "integer":
+        print v1.value, v2.value
+        print v1.value > v2.value
+        print VBoolean(v1.value > v2.value)
         return VBoolean(v1.value > v2.value)
     elif v1.type == "string" and v2.type == "string":
         return VBoolean(v1.value > v2.value)
@@ -1074,7 +1107,12 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK | pEXPR2)
+    pSTMT_EXPR = pEXPR + ";"
+    pSTMT_EXPR.setParseAction(lambda result: [result[0]])
+
+
+
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK | pSTMT_EXPR)
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
