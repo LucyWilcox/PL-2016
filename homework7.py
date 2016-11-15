@@ -907,7 +907,7 @@ def parse_imp (input):
     pSTMT_BLOCK = Forward()
     pSTMT = Forward()
 
-    pEXPRS = ZeroOrMore(pEXPR)
+    pEXPRS = ZeroOrMore(pEXPR2)
     pEXPRS.setParseAction(lambda result: [result])
 
     pIF = pEXPR + Keyword("?") + pEXPR + Keyword(':') + pEXPR
@@ -941,10 +941,10 @@ def parse_imp (input):
     pEXPR2CAR = "," + pEXPR2
     pEXPR2CAR.setParseAction(lambda result: result[1])
 
-    pEXPR2MULTI = pEXPR2 + ZeroOrMore(pEXPR2CAR)
-    pEXPR2MULTI.setParseAction(lambda result: [result])
+    pEXPR2MULTIALL = pEXPR2 + ZeroOrMore(pEXPR2CAR) | ZeroOrMore(pEXPR2)
+    pEXPR2MULTIALL.setParseAction(lambda result: [result])
 
-    pFUNCALL = pIDENTIFIER + "(" + pEXPR2MULTI + ")"
+    pFUNCALL = pEXPR + "(" + pEXPR2MULTIALL + ")"
     pFUNCALL.setParseAction(lambda result: ECall(result[0], result[2]))
 
     pBINDINGCAR = "," + pNAME + "=" + pEXPR2
@@ -1004,9 +1004,9 @@ def parse_imp (input):
     pLEN = Keyword("len") + "(" + pNAME + ")"
     pLEN.setParseAction(lambda result: EPrimCall(oper_len,[EId(result[2])]))
 
-    pEXPR << ( pEXPR2P | pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 | pLEN )
+    pEXPR << ( pEXPR2P |  pINTEGER | pNOT | pARRAY | pACCESS | pDICT | pSTRING | pBOOLEAN | pIDENTIFIER | pCALL1 | pLEN )
 
-    pEXPR2 << ( pLET | pFUN | pFUNR | pFUNCALL | pIF | pCALL | pEXPR)
+    pEXPR2 << ( pLET | pFUN | pFUNR | pFUNCALL | pIF | pCALL | pEXPR )
 
     pDECL_VAR_E = "var" + pNAME + ";"
     pDECL_VAR_E.setParseAction(lambda result: (result[1], EValue(VNone)))
@@ -1061,9 +1061,6 @@ def parse_imp (input):
     pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
     pSTMT_UPDATE.setParseAction(lambda result: EPrimCall(oper_update,[EId(result[0]),result[2]]))
 
-    pSTMT_PROCEDURE = pEXPR + "(" + pEXPRS + ")" + ";"
-    pSTMT_PROCEDURE.setParseAction(lambda result: ECall(result[0], result[2]))
-
     pSTMTS = ZeroOrMore(pSTMT)
     pSTMTS.setParseAction(lambda result: [result])
 
@@ -1074,7 +1071,7 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE |  pSTMT_PROCEDURE | pSTMT_BLOCK | pEXPR2)
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE | pSTMT_BLOCK | pEXPR2 )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
@@ -1102,7 +1099,7 @@ def tryImp(env, inp):
 
         if result["result"] == "statement":
             stmt = result["stmt"]
-            # print "Abstract representation:", exp
+            # print "Abstract representation:", stmt
             v = stmt.eval(env)
 
         elif result["result"] == "abstract":
