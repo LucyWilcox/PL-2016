@@ -15,5 +15,5 @@ def main () {
   print y + z;
   print y + " " + z;
   print len(x);
-  print make_string(10,"abc");
+  make_string(10, "abc");
 };

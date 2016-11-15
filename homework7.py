@@ -215,11 +215,13 @@ class EFor (Exp):
         self._i = i
         self._body = body
         self._exp = exp
+        print "HHH"
 
     def __str__ (self):
         return "EFor({},{},{},{})".format(str(self._i), str(self._body), str(self._exp))
 
     def eval (self,env):
+        print "ee"
         for i in self._exp.eval(env).value:
             if hasattr(i, "_value"):
                 i_val = (self._i, VRefCell(i.eval(env)))
@@ -924,12 +926,13 @@ def parse_imp (input):
 
     def multiCallHelper(result, start, i, length):
         if i < length:
-            start = ECall(result[1][i][0], [start, result[1][i][1]])
+            start = ECall(result[1][i][0], [result[1][i][1], start])
             multiCallHelper(result, start, i + 1, length)
         return start
 
     def multiCall(result):
-        start = ECall(result[1][0][0], [result[1][0][1], result[0]])
+        start = ECall(result[1][0][0], [result[0], result[1][0][1]])
+        print start
         return multiCallHelper(result, start, 1, len(result[1]))
 
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
@@ -1071,7 +1074,10 @@ def parse_imp (input):
     pSTMT_BLOCK = "{" + pDECLS + pSTMTS + "}"
     pSTMT_BLOCK.setParseAction(lambda result: mkBlock(result[1],result[2]))
 
-    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE | pSTMT_BLOCK | pEXPR2 )
+    pSTMT_pEXPR2 = pEXPR2 + ";"
+    pSTMT_pEXPR2.setParseAction(lambda result: result[0])
+
+    pSTMT << ( pSTMT_IF_1 | pSTMT_IF_2 | pSTMT_WHILE | pSTMT_FOR | pSTMT_PRINT | pSTMT_UPDATE_ARR | pSTMT_UPDATE | pSTMT_BLOCK | pSTMT_pEXPR2 | pEXPR2 )
 
     # can't attach a parse action to pSTMT because of recursion, so let's duplicate the parser
     pTOP_STMT = pSTMT.copy()
