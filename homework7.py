@@ -244,6 +244,7 @@ class EArray(Exp):
         self._content.append(itemOne)
         for i, each in enumerate(arrayItems):
             self._content.append(each)
+        print self._content
 
 
     def __str__ (self):
@@ -521,14 +522,20 @@ def oper_update (v1,v2):
         return VNone()
     raise Exception ("Runtime error: updating a non-reference value")
  
-def oper_update_arr(array,index,update):
-    if array.type == "ref":
+def oper_update_arr(arrayOrDict,index,update):
+    if arrayOrDict.type == "ref":
         if isinstance(update.value, int):
-            array.content.value[index.value] = EValue(VInteger(update.value))
+            arrayOrDict.content.value[index.value] = EValue(VInteger(update.value))
         if isinstance(update.value, str):
-            array.content.value[index.value] = EValue(VString(update.value))
+            arrayOrDict.content.value[index.value] = EValue(VString(update.value))
         if isinstance(update.value, bool):
-            array.content.value[index.value] = EValue(VBoolean(update.value))
+            arrayOrDict.content.value[index.value] = EValue(VBoolean(update.value))
+        if update.type == "array":
+            arrayOrDict.content.value[index.value] = update
+        if update.type == "dict":
+            arrayOrDict.content.value[index.value] = update
+
+
         return VNone()
 
 def oper_access_arr(arrayOrDict,index):
@@ -541,17 +548,28 @@ def oper_access_arr(arrayOrDict,index):
         if isinstance(current, bool):
             return VBoolean(current)
 
+def printArray(v1):
+    newArray = []
+    for each in v1.value:
+        newArray.append(each._value.value)
+    return newArray
+
+def printDict(v1):
+    dictionary = v1.value
+    for key, value in dictionary.iteritems():    
+        return key,value._value.value
+
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
-            newArray = []
-            for each in v1.value:
-                newArray.append(each._value.value)
-            print newArray
-            return VNone()
+            print printArray(V1)
+        elif v1.type == "dict":
+            dictionary = v1.value
+            for key, value in dictionary.iteritems():
+                print key,value
         else:
             print v1.value
-            return VNone()
+        return VNone()
     print v1
     return VNone()
 
@@ -1033,7 +1051,7 @@ def parse_imp (input):
     # pSTMT_PRINT = "print" + pEXPR2 + ";"
     # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
 
-    pSTMT_UPDATE_ARR = pNAME + "[" + pINTEGER +"]" + "=" + pEXPR + ";"
+    pSTMT_UPDATE_ARR = pNAME + "[" + pEXPR +"]" + "=" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
     pSTMT_UPDATE = pNAME + "=" + pEXPR2 + ";"
