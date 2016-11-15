@@ -265,8 +265,6 @@ class EDict(Exp):
     def eval (self,env):
         return VDict(self._dict,env)
 
-
-
 class EObject (Exp):
     
     def __init__ (self,fields,methods):
@@ -296,7 +294,6 @@ class EWithObj (Exp):
         #     raise Exception("Runtime error: expected an object")
         all_env =object.methods+object.env+env
         return self._exp.eval(all_env)
-
 
 
 #
@@ -426,7 +423,7 @@ class VString(Value):
         self.type = "string"
         prev = None
         for i, eachString in enumerate(self.content):
-            if eachString.isalpha() or eachString == " " or eachString in ["+","*","-","?","!","=","<",">","+"]:
+            if eachString.isalpha() or eachString.isdigit() or eachString == " " or eachString in ["+","*","-","?","!","=","<",">","+", "."]:
                 self.value += eachString
             elif prev == "&" and eachString == "\"":
                 self.value = self.value[:-1]
@@ -871,15 +868,18 @@ def parse_imp (input):
     pNAMECON = "," + pNAME
     pNAMECON.setParseAction(lambda result: result[1])
 
-    pNAMES = pNAME + ZeroOrMore(pNAMECON)
+    pNAMES = pNAME + ZeroOrMore(pNAMECON) | ZeroOrMore(pNAME)
     pNAMES.setParseAction(lambda result: [result])
 
     pINTEGER = Word("0123456789")
     pINTEGER.setParseAction(lambda result: EValue(VInteger(int(result[0]))))
 
     QUOTE = Literal("&\"") | Literal("&\'") 
-    pSTRING = Literal('"') + ZeroOrMore(Combine( Word(idChars+"0123456789'"+" ") | QUOTE)) + Literal('"')
-    pSTRING.setParseAction(lambda result: EValue(VString(str(result[1:-1]))))
+    pSTRINGSTART = Literal('"') + ZeroOrMore(Word(" ")).leaveWhitespace()
+    pSTRINGSTART.setParseAction(lambda result: result[1:])
+
+    pSTRING = pSTRINGSTART + ZeroOrMore(Combine( Word(idChars+"0123456789'"+" ") | QUOTE)) + Literal('"')
+    pSTRING.setParseAction(lambda result: EValue(VString(str(result[:-1]))))
 
     pBOOLEAN = Keyword("true") | Keyword("false")
     pBOOLEAN.setParseAction(lambda result: EValue(VBoolean(result[0]=="true")))
@@ -1074,9 +1074,6 @@ def parse_imp (input):
     result = pTOP.parseString(input)[0]
     return result    # the first element of the result is the expression
 
-
-
-
 def tryImp(env, inp):
     try:
         result = parse_imp(inp)
@@ -1112,25 +1109,30 @@ def shell_imp ():
     env = initial_env_imp()
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
-        # with open(fileName) as f:
-        #     mylist = f.read().splitlines()
-        # line = ""
-        # for each in mylist:
-        #     if each.endswith("};"):
+        with open(fileName) as f:
+            mylist = f.read().splitlines()
+        line = ""
+        globs = True
+        mylist = (line for line in mylist if line)
+        for each in mylist:
+            if each.endswith("};"):
+                line+=each
+                globs = True;
+                # print line
+                tryImp(env,line)
+                line = ""
+            elif not each.startswith("def") and globs == True:
+                tryImp(env,each)
+            else:
+                globs = False
+                line+=each
+        tryImp(env, line)
 
-        #         line+=each
-        #         print line
-        #         tryImp(env,line)
-        #         line = ""
-        #         print line
-        #     else:
-        #         line+=each
+        tryImp(env,"main();")
 
-        # tryImp(env,"main();")
-
-        f = open(fileName)
-        for each in f:
-            tryImp(env,each)
+        # f = open(fileName)
+        # for each in f:
+        #     tryImp(env,each)
 
     else:
         while True:
