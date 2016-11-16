@@ -368,7 +368,16 @@ class VDict(Value):
 
 class VArray(Value):
     def __init__ (self,content,env):
-        self.value = content
+        self.value = []
+        for i in content:
+            if hasattr(i, "_prim"):
+                if type(i.eval(env).value) == list:
+                    self.value.extend(i.eval(env).value)
+                else:
+                    self.value.append(EValue(i.eval(env)))
+            else:
+                self.value.append(i)
+
         self.type = "array"
         self.env = env
         self.methods = [

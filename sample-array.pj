@@ -23,8 +23,8 @@ def reverse (arr) {
   var result = [];
   var n = len(arr);
   while (n > 0) {
-    result = result + [arr[n-1]];
     n = n - 1;
+    result = result + [arr[n]];
   }
   result;
 }
@@ -45,6 +45,7 @@ def main () {
   pr_array(arr0 + arr3);
   pr_array(arr2 + arr3);
 
+  print reverse(arr3);
   pr_array(reverse(arr3));
 
   test_loop(arr3);
