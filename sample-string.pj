@@ -5,7 +5,7 @@ def make_string ( n, x ) {
       result = result + x;
     }
     print result;
-};
+}
 
 def main () {
   var x = "this is a string";
@@ -16,4 +16,4 @@ def main () {
   print y + " " + z;
   print len(x);
   make_string(10, "abc");
-};
+}

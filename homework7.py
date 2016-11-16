@@ -32,7 +32,6 @@ globalFunctionReturn = "";
 class Exp (object):
     pass
 
-
 class EValue (Exp):
     # Value literal (could presumably replace EInteger and EBoolean)
     def __init__ (self,v):
@@ -44,8 +43,7 @@ class EValue (Exp):
     def eval (self,env):
         globalFunctionReturn = self._value
         return globalFunctionReturn
-
-    
+   
 class EPrimCall (Exp):
     # Call an underlying Python primitive, passing in Values
     #
@@ -80,13 +78,11 @@ class EIf (Exp):
         if v.type != "boolean":
             raise Exception ("Runtime error: condition not a Boolean")
         if v.value:
-            print v.value,"value"
             globalFunctionReturn = self._then.eval(env)
             return globalFunctionReturn
         else:
             globalFunctionReturn = self._else.eval(env)
             return globalFunctionReturn
-
 
 class ELet (Exp):
     # local binding
@@ -94,7 +90,6 @@ class ELet (Exp):
     # eager (call-by-avlue)
 
     def __init__ (self,bindings,e2):
-        print "came to elet"
         self._bindings = bindings
         self._e2 = e2
 
@@ -102,9 +97,6 @@ class ELet (Exp):
         return "ELet([{}],{})".format(",".join([ "({},{})".format(id,str(exp)) for (id,exp) in self._bindings ]),self._e2)
 
     def eval (self,env):
-        print "came to elet eval"
-        print self._bindings,"*****"
-        print self._e2
         new_env = [ (id,e.eval(env)) for (id,e) in self._bindings] + env
         globalFunctionReturn = self._e2.eval(new_env)
         return globalFunctionReturn
@@ -124,7 +116,6 @@ class EId (Exp):
                 globalFunctionReturn = v
                 return globalFunctionReturn
         raise Exception("Runtime error: unknown identifier {}".format(self._id))
-
 
 class ECall (Exp):
     # Call a defined function in the function dictionary
@@ -157,8 +148,6 @@ class ECall (Exp):
 
         # return EDo(f.body).eval(new_env)
 
-
-
 class EFunction (Exp):
     # Creates an anonymous function
 
@@ -175,7 +164,6 @@ class EFunction (Exp):
             env.insert(0,(self._name, VClosure(self._params,self._body,env)))
         globalFunctionReturn = VClosure(self._params,self._body,env)
         return globalFunctionReturn
-
 
 class ERefCell (Exp):
     # this could (should) be turned into a primitive
@@ -203,9 +191,7 @@ class EDo (Exp):
     def eval (self,env):
         # default return value for do when no arguments
         v = VNone()
-        print self._exps,"exps in edo"
         for e in self._exps:
-            print e,"in edo"
             v = e.eval(env)
             globalFunctionReturn = v
         return globalFunctionReturn
@@ -223,10 +209,8 @@ class EWhile (Exp):
         c = self._cond.eval(env)
         if c.type != "boolean":
             raise Exception ("Runtime error: while condition not a Boolean")
-        print c.value,"came to ewhile?"
         while c.value:
             globalFunctionReturn = self._exp.eval(env)
-            print globalFunctionReturn,"in while loop************************"
             c = self._cond.eval(env)
             if c.type != "boolean":
                 raise Exception ("Runtime error: while condition not a Boolean")
@@ -238,13 +222,11 @@ class EFor (Exp):
         self._i = i
         self._body = body
         self._exp = exp
-        print "HHH"
 
     def __str__ (self):
         return "EFor({},{},{},{})".format(str(self._i), str(self._body), str(self._exp))
 
     def eval (self,env):
-        print "ee"
         for i in self._exp.eval(env).value:
             if hasattr(i, "_value"):
                 i_val = (self._i, VRefCell(i.eval(env)))
@@ -265,13 +247,12 @@ class EProcedure (Exp):
         return globalFunctionReturn
 
 class EArray(Exp):
-    def __init__ (self,itemOne,arrayItems):
+    def __init__ (self,itemOne=None, arrayItems=None):
         self._content = []
-        self._content.append(itemOne)
-        for i, each in enumerate(arrayItems):
-            self._content.append(each)
-        print self._content
-
+        if itemOne:
+            self._content.append(itemOne)
+            for i, each in enumerate(arrayItems):
+                self._content.append(each)
 
     def __str__ (self):
         return "EArray(length: {})".format(str(self._length))
@@ -367,7 +348,6 @@ class VBoolean (Value):
 
     def __str__ (self):
         return "true" if self.value else "false"
-
     
 class VClosure (Value):
     
@@ -385,7 +365,6 @@ class VDict(Value):
         self.value = content
         self.type = "dict"
         self.env = env
-
 
 class VArray(Value):
     def __init__ (self,content,env):
@@ -523,7 +502,8 @@ def oper_plus (v1,v2):
     elif v1.type == "string" and v2.type == "string":
         return VString(v1.value + v2.value)
     elif v1.type == "array" and v2.type == "array":
-        return VArray(v1.value + v2.value)
+        vals = v1.value + v2.value
+        return VArray(vals, [])
     raise Exception ("Runtime error: trying to add inncorrect types")
 
 def oper_minus (v1,v2):
@@ -592,7 +572,7 @@ def printDict(v1):
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
-            print printArray(V1)
+            print printArray(v1)
         elif v1.type == "dict":
             dictionary = v1.value
             for key, value in dictionary.iteritems():
@@ -604,7 +584,6 @@ def forEachPrint (v1):
     return VNone()
 
 def oper_print(*args):
-    print "came to oper print"
     if len(args) == 1:
         forEachPrint(args[0])
     else:
@@ -673,11 +652,7 @@ def oper_less(v1,v2):
     raise Exception ("Runtime error: variable is not a string or int type")
 
 def oper_greater(v1,v2):
-    print "came to oper_grater"
     if v1.type == "integer" and v2.type == "integer":
-        print v1.value, v2.value
-        print v1.value > v2.value
-        print VBoolean(v1.value > v2.value)
         return VBoolean(v1.value > v2.value)
     elif v1.type == "string" and v2.type == "string":
         return VBoolean(v1.value > v2.value)
@@ -965,7 +940,6 @@ def parse_imp (input):
 
     def multiCall(result):
         start = ECall(result[1][0][0], [result[0], result[1][0][1]])
-        print start
         return multiCallHelper(result, start, 1, len(result[1]))
 
     def eFunHelper(variables, expression):
@@ -974,16 +948,8 @@ def parse_imp (input):
         else:
             return EFunction(variables[0], eFunHelper(variables[1:], expression))
 
-    def eFun(result):
-        variables = result[3:-2]
-        expression = result[-1]
-        print variables,expression,"*********"
-        return eFunHelper(variables, expression)
-
-
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
-    pFUN.setParseAction(eFun)
-    # pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
+    pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
     pFUNR = Keyword("fun") + pNAME + "(" + pNAMES + ")" + pSTMT
     pFUNR.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5]), result[1]))
@@ -1024,13 +990,13 @@ def parse_imp (input):
     pNOT = "not" + pEXPR2
     pNOT.setParseAction(lambda result: EPrimCall(oper_not, [result[1]]))
 
-    pARRAYITEM = "," + pEXPR
+    pARRAYITEM = "," + pEXPR2
     pARRAYITEM.setParseAction(lambda result: (result[1]))
 
     pARRAYITEMS = ZeroOrMore(pARRAYITEM)
     pARRAYITEMS.setParseAction(lambda result: [result])
 
-    pARRAY = "[" + pEXPR + pARRAYITEMS + "]"
+    pARRAY = "[" + ZeroOrMore(pEXPR2) + pARRAYITEMS + "]"
     pARRAY.setParseAction(lambda result: EArray(result[1],result[2]))
 
     pDICTPAIR = pNAME + ":" + pEXPR
@@ -1102,9 +1068,6 @@ def parse_imp (input):
     pSTMT_PRINT = "print" + pEXPR2 + pSTMT_PRINT_ZERO + ";"
     pSTMT_PRINT.setParseAction(printStmEval)
 
-    # pSTMT_PRINT = "print" + pEXPR2 + ";"
-    # pSTMT_PRINT.setParseAction(lambda result: EPrimCall(oper_print,[result[1]]));
-
     pSTMT_UPDATE_ARR = pNAME + "[" + pEXPR +"]" + "=" + pEXPR + ";"
     pSTMT_UPDATE_ARR.setParseAction(lambda result: EPrimCall(oper_update_arr,[EId(result[0]),result[2],result[5]]))
 
@@ -1140,35 +1103,38 @@ def parse_imp (input):
                                              "stmt":result[1]})
     pQUIT = Keyword("#quit")
     pQUIT.setParseAction(lambda result: {"result":"quit"})
-    
-    pTOP = (pQUIT | pABSTRACT | pTOP_DECL | pTOP_STMT )
 
-    result = pTOP.parseString(input)[0]
-    return result    # the first element of the result is the expression
+    pTOP =  ZeroOrMore(pTOP_DECL) + ZeroOrMore(pTOP_STMT) 
+    return pTOP.parseString(input)
+    # result = pTOP.parseString(input)[0]
+    # print result
+    # return result    # the first element of the result is the expression
 
 def tryImp(env, inp):
     try:
-        result = parse_imp(inp)
+        results = parse_imp(inp)
+        for result in results:
+            if result["result"] == "statement":
+                stmt = result["stmt"]
+                # print "Abstract representation:", stmt
+                v = stmt.eval(env)
 
-        if result["result"] == "statement":
-            stmt = result["stmt"]
-            # print "Abstract representation:", stmt
-            v = stmt.eval(env)
+            elif result["result"] == "abstract":
+                print result["stmt"]
 
-        elif result["result"] == "abstract":
-            print result["stmt"]
+            elif result["result"] == "quit":
+                return
 
-        elif result["result"] == "quit":
-            return
+            elif result["result"] == "declaration":
+                (name,expr) = result["decl"]
+                v = expr.eval(env)
+                env.insert(0,(name,VRefCell(v)))
+                print "{} defined".format(name)
 
-        elif result["result"] == "declaration":
-            (name,expr) = result["decl"]
-            v = expr.eval(env)
-            env.insert(0,(name,VRefCell(v)))
-            print "{} defined".format(name)
 
     except Exception as e:
-        print "Exception: {}".format(e)
+        pass
+        # print "Exception: {}".format(e)
 
 
 def shell_imp ():
@@ -1182,23 +1148,23 @@ def shell_imp ():
     if len(sys.argv) == 2:
         fileName = sys.argv[1]
         with open(fileName) as f:
-            mylist = f.read().splitlines()
-        line = ""
-        globs = True
-        mylist = (line for line in mylist if line)
-        for each in mylist:
-            if each.endswith("};"):
-                line+=each
-                globs = True;
-                # print line
-                tryImp(env,line)
-                line = ""
-            elif not each.startswith("def") and globs == True:
-                tryImp(env,each)
-            else:
-                globs = False
-                line+=each
-        tryImp(env, line)
+            mylist = f.read() #S.splitlines()
+        # line = ""
+        # # globs = True
+        # mylist = (line for line in mylist if line)
+        # for each in mylist:
+        #     # if each.endswith("};"):
+        #     #     line+=each
+        #     #     globs = True;
+        #     #     # print line
+        #     #     tryImp(env,line)
+        #     #     line = ""
+        #     # elif not each.startswith("def") and globs == True:
+        #     #     tryImp(env,each)
+        #     # else:
+        #     #     globs = False
+        #     line+=each
+        tryImp(env, mylist)
 
         tryImp(env,"main();")
 
