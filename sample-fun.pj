@@ -1,6 +1,6 @@
 
 def twice (f) {
-  var nf = fun (x) { f( f(x) ); };
+  var nf = fun (x) { f(f(x)); };
   nf;
 }
 

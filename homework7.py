@@ -161,7 +161,7 @@ class EFunction (Exp):
 
     def eval (self,env):
         if self._name!="":
-            env.insert(0,(self._name, VClosure(self._params,self._body,env)))
+            env.insert(0,(self._name, VRefCell(VClosure(self._params,self._body,env))))
         globalFunctionReturn = VClosure(self._params,self._body,env)
         return globalFunctionReturn
 
@@ -948,10 +948,18 @@ def parse_imp (input):
         else:
             return EFunction(variables[0], eFunHelper(variables[1:], expression))
 
+    def eFunName(result):
+        varName = result[1]
+        variables = result[3]
+        expression = result[-1]
+        print variables, expression
+        return EFunction(variables, expression, varName)
+
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
     pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
     pFUNR = Keyword("fun") + pNAME + "(" + pNAMES + ")" + pSTMT
+    # pFUNR.setParseAction(eFunName)
     pFUNR.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5]), result[1]))
 
     pEXPR2CAR = "," + pEXPR2
