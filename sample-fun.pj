@@ -36,3 +36,4 @@ def main () {
     print sum(100), 5050;
 };
 
+def sum (n) { if (n == 0) { 0; } else { n + sum(n - 1); } };

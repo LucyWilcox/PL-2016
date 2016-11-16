@@ -968,8 +968,22 @@ def parse_imp (input):
         print start
         return multiCallHelper(result, start, 1, len(result[1]))
 
+    def eFunHelper(variables, expression):
+        if len(variables) == 1:
+            return EFunction(variables[0], expression)
+        else:
+            return EFunction(variables[0], eFunHelper(variables[1:], expression))
+
+    def eFun(result):
+        variables = result[3:-2]
+        expression = result[-1]
+        print variables,expression,"*********"
+        return eFunHelper(variables, expression)
+
+
     pFUN = Keyword("fun") + "(" + pNAMES + ")" + pSTMT
-    pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
+    pFUN.setParseAction(eFun)
+    # pFUN.setParseAction(lambda result: EFunction(result[2],mkFunBody(result[2],result[4])))
 
     pFUNR = Keyword("fun") + pNAME + "(" + pNAMES + ")" + pSTMT
     pFUNR.setParseAction(lambda result: EFunction(result[3],mkFunBody(result[3],result[5]), result[1]))
