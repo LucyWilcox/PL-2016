@@ -19,7 +19,10 @@ Parenthesis must be used for expression in some expressions, for example:
 print true ? 2 : 3; is vaild
 print not true ? 2 : 3; is not valid
 print (not true) ? 2 : 3; is valid
-
+print ( 2 * 4 ) + 3; will print the correct results
+print 2 * 4 + 3; will not
+print (not true) or (not false); will return true an be correct
+print not true or not false; Will not return the correct result
 
 """
 import sys
@@ -710,7 +713,6 @@ def oper_equal(v1,v2):
     raise Exception ("Runtime error: variable is not a recognized type")
 
 def oper_not(v1):
-    print "came to not", v1
     if v1.type == "boolean":
         if v1.value == True:
             return VBoolean(False)
@@ -730,7 +732,6 @@ def oper_and(v1, v2):
 
 def oper_or(v1, v2):
     if v1.type == "boolean" and v2.type == "boolean":
-        print v1.value, v2.value, "came to or"
         if v1.value == True:
             return VBoolean(True)
         elif v2.value == True:
