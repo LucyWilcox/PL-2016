@@ -370,7 +370,7 @@ class VArray(Value):
     def __init__ (self,content,env):
         self.value = []
         for i in content:
-            if hasattr(i, "_prim"):
+            if hasattr(i, "_prim") or hasattr(i, "_fun"):
                 if type(i.eval(env).value) == list:
                     self.value.extend(i.eval(env).value)
                 else:
@@ -569,8 +569,11 @@ def oper_access_arr(arrayOrDict,index):
 
 def printArray(v1):
     newArray = []
+    env = v1.env
     for each in v1.value:
-        newArray.append(each._value.value)
+        print each,"Each"
+        # evaluate = each.eval(env)
+        newArray.append(each)
     return newArray
 
 def printDict(v1):
@@ -590,10 +593,9 @@ def forEachPrint (v1):
             return dictValue
         else:
             return v1.value
-    print v1
+    return v1
 
 def oper_print(*args):
-    print args,"*******"
     if len(args) == 1:
         print forEachPrint(args[0])
     else:
