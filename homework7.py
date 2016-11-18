@@ -581,23 +581,22 @@ def printDict(v1):
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
-            print printArray(v1)
+            return printArray(v1)
         elif v1.type == "dict":
             dictionary = v1.value
             for key, value in dictionary.iteritems():
-                print key,value
+                return key,value
         else:
-            print v1.value
-        return VNone()
+            return v1.value
     print v1
-    return VNone()
 
 def oper_print(*args):
     if len(args) == 1:
-        forEachPrint(args[0])
+        print forEachPrint(args[0])
     else:
         for eachArg in args:
-            forEachPrint(eachArg)
+            print forEachPrint(eachArg),
+    return VNone()
 
 def oper_length(v1):
     if v1.type == "string":
