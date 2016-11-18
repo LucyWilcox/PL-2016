@@ -584,18 +584,25 @@ def forEachPrint (v1):
             return printArray(v1)
         elif v1.type == "dict":
             dictionary = v1.value
+            dictValue = dict()
             for key, value in dictionary.iteritems():
-                return key,value
+                dictValue[key] = value
+            return dictValue
         else:
             return v1.value
     print v1
 
 def oper_print(*args):
+    print args,"*******"
     if len(args) == 1:
         print forEachPrint(args[0])
     else:
-        for eachArg in args:
-            print forEachPrint(eachArg),
+        for i ,eachArg in enumerate(args):
+            if i ==len(args)-1:
+                print forEachPrint(eachArg)
+            else:
+                print forEachPrint(eachArg),
+
     return VNone()
 
 def oper_length(v1):
@@ -689,6 +696,7 @@ def oper_equal(v1,v2):
     raise Exception ("Runtime error: variable is not a recognized type")
 
 def oper_not(v1):
+    print "came to not", v1
     if v1.type == "boolean":
         if v1.value == True:
             return VBoolean(False)
@@ -708,6 +716,7 @@ def oper_and(v1, v2):
 
 def oper_or(v1, v2):
     if v1.type == "boolean" and v2.type == "boolean":
+        print v1.value, v2.value, "came to or"
         if v1.value == True:
             return VBoolean(True)
         elif v2.value == True:

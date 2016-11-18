@@ -12,11 +12,12 @@ def test_loop (arr) {
 }
 
 def map (arr, f) {
-  var result = [];
+  var results = [];
+  print results,"result******";
   for (v in arr) {
-    result = result + [ f(v) ];
+    results = results + [f(v)];
   }
-  result;
+  print results;
 }
 
 def reverse (arr) {
@@ -26,7 +27,7 @@ def reverse (arr) {
     n = n - 1;
     result = result + [arr[n]];
   }
-  result;
+  print result;
 }
 
 
@@ -55,6 +56,8 @@ def main () {
   for (v in arr3) {
     print v;
   }
+  print [10] + [10];
+
 
   for (v in reverse(arr3)) {
     print v;
