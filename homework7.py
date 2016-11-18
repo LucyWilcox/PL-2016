@@ -595,18 +595,14 @@ def printDict(v1):
         else:
             newDict[key] = value._value.value
 
-        return newDict
+    return newDict
 
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
             return printArray(v1)
         elif v1.type == "dict":
-            dictionary = v1.value
-            dictValue = dict()
-            for key, value in dictionary.iteritems():
-                dictValue[key] = value
-            return dictValue
+            return printDict(v1)
         else:
             return v1.value
     return v1
