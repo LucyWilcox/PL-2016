@@ -569,17 +569,33 @@ def oper_access_arr(arrayOrDict,index):
 
 def printArray(v1):
     newArray = []
-    env = v1.env
     for each in v1.value:
-        print each,"Each"
-        # evaluate = each.eval(env)
-        newArray.append(each)
+        if not hasattr(each,"_value"):
+            if each.type == "array":
+                each = printArray(each)
+                newArray.append(each)
+            else:
+                dictValue = printDict(each)
+                newArray.append(dictValue)
+        else:
+            newArray.append(each._value.value)
     return newArray
 
 def printDict(v1):
     dictionary = v1.value
-    for key, value in dictionary.iteritems():    
-        return key,value._value.value
+    newDict = dict()
+    for key, value in dictionary.iteritems():
+        if not hasattr(value,"_value"):
+            if value.type == "array":
+                value = printArray(value)
+                newDict[key] = value
+            else:
+                dictValue = printDict(value)
+                newDict[key] = dictValue
+        else:
+            newDict[key] = value._value.value
+
+        return newDict
 
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
