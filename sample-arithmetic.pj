@@ -3,12 +3,12 @@ var global_number = 10;
 
 def main () {
   var x = global_number;
-  print x;
-  print x + 2;
-  print x * 2;
-  print x + 2 * 2;
-  print x * 2 + 2;
-  print ( x - 2 ) + 2;
-  print ( x + 2 ) * 2;
+  print x, 10;
+  print x + 2, 12;
+  print x * 2, 20;
+  print x + 2 * 2, 14;
+  print x * 2 + 2, 40;
+  print ( x - 2 ) + 2, 10;
+  print ( x + 2 ) * 2, 24;
   print x * 2 + x * 2;
 }

@@ -19,7 +19,10 @@ Parenthesis must be used for expression in some expressions, for example:
 print true ? 2 : 3; is vaild
 print not true ? 2 : 3; is not valid
 print (not true) ? 2 : 3; is valid
-
+print ( 2 * 4 ) + 3; will print the correct results
+print 2 * 4 + 3; will not
+print (not true) or (not false); will return true an be correct
+print not true or not false; Will not return the correct result
 
 """
 import sys
@@ -370,7 +373,7 @@ class VArray(Value):
     def __init__ (self,content,env):
         self.value = []
         for i in content:
-            if hasattr(i, "_prim"):
+            if hasattr(i, "_prim") or hasattr(i, "_fun"):
                 if type(i.eval(env).value) == list:
                     self.value.extend(i.eval(env).value)
                 else:
@@ -570,34 +573,54 @@ def oper_access_arr(arrayOrDict,index):
 def printArray(v1):
     newArray = []
     for each in v1.value:
-        newArray.append(each._value.value)
+        if not hasattr(each,"_value"):
+            if each.type == "array":
+                each = printArray(each)
+                newArray.append(each)
+            else:
+                dictValue = printDict(each)
+                newArray.append(dictValue)
+        else:
+            newArray.append(each._value.value)
     return newArray
 
 def printDict(v1):
     dictionary = v1.value
-    for key, value in dictionary.iteritems():    
-        return key,value._value.value
+    newDict = dict()
+    for key, value in dictionary.iteritems():
+        if not hasattr(value,"_value"):
+            if value.type == "array":
+                value = printArray(value)
+                newDict[key] = value
+            else:
+                dictValue = printDict(value)
+                newDict[key] = dictValue
+        else:
+            newDict[key] = value._value.value
+
+    return newDict
 
 def forEachPrint (v1):
     if hasattr(v1, 'type'):
         if v1.type == "array":
-            print printArray(v1)
+            return printArray(v1)
         elif v1.type == "dict":
-            dictionary = v1.value
-            for key, value in dictionary.iteritems():
-                print key,value
+            return printDict(v1)
         else:
-            print v1.value
-        return VNone()
-    print v1
-    return VNone()
+            return v1.value
+    return v1
 
 def oper_print(*args):
     if len(args) == 1:
-        forEachPrint(args[0])
+        print forEachPrint(args[0])
     else:
-        for eachArg in args:
-            forEachPrint(eachArg)
+        for i ,eachArg in enumerate(args):
+            if i ==len(args)-1:
+                print forEachPrint(eachArg)
+            else:
+                print forEachPrint(eachArg),
+
+    return VNone()
 
 def oper_length(v1):
     if v1.type == "string":
