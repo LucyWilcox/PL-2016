@@ -208,24 +208,16 @@ class ECall (Exp):
     def typecheck (self,symtable):
         # type is the type of the result of the function
         tfun = self._fun.typecheck(symtable)
-        print tfun,"tfun type?????"
         if not (tfun.isFunction()):
             raise Exception("Type error: non-function in ECall, got {}".format(tfun))
         # found, expected...
         if len(tfun.params) != len(self._args):
             raise Exception("Type error: wrong number of arguments in ECall, expected {} got {}".format(len(tfun.params),len(self._args)))
         for (t,arg) in zip(tfun.params,self._args):
-            # print t, arg, "**", arg.typecheck(symtable), t.type_name
-            #add to symtable, type T_1 for example check rest T against
-            #most recent T (T with higest numb), or set the symtable back
-            #the symtable when this started
-            print t, t.isGen(), t.isFunction()
             if t.isFunction():
                 for i,j in zip(t.params, arg.typecheck(symtable).params):
                     if i.isGen():
-                        print i.type_name, "iii", j.type, j
                         found = search_table(i, symtable)
-                        print found.type
                         if found == False:
                             symtable = symtable + [(i.type_name, j)]
                         else:
@@ -241,27 +233,7 @@ class ECall (Exp):
                     else:
                         if not found.type == arg.typecheck(symtable).result.type:
                             raise Exception("Type error: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
-
-                #arg.typecheck(symtable).result 
-                #t.result # .type_name <S>
-                                
-                        # found = False
-                        # for (name,typ) in reversed(symtable):
-                        #     if name == i.type_name:
-                        #         found = True
-                        #         print j, i.typecheck(symtable), "CHECKING"
-                        #         if not j == i.typecheck(symtable):
-                        #             raise Exception("Type error: wrong argument in ECall, expected {} got {}".format(i,arg.typecheck(symtable)))            
-                        # if found == False:
-                        #     symtable = symtable + [(i.type_name, j)]
-                    # else:
-                    #     if not i.isEqual(arg.typecheck(symtable)):
-                    #         raise Exception("Type error: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))
-
-
-                print arg, "&&&", arg.typecheck(symtable).params, arg.typecheck(symtable).result
-                print t.params, t.result
-
+           
             elif not t.isGen():
                 if not t.isEqual(arg.typecheck(symtable)):
                     raise Exception("Type error: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))
