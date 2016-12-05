@@ -577,6 +577,7 @@ def shell ():
             if result["result"] == "expression":
                 exp = result["expr"]
                 with Timer() as timer:
+                    print exp, symt
                     typ = exp.typecheck(symt)
                     print "[Type {}]".format(typ)
                     v = exp.eval(env)
