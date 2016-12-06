@@ -207,6 +207,8 @@ class ECall (Exp):
 
     def typecheck (self,symtable):
         # type is the type of the result of the function
+        old_symtable = symtable
+        print "TYPECALL"
         tfun = self._fun.typecheck(symtable)
         if not (tfun.isFunction()):
             raise Exception("Type error1: non-function in ECall, got {}".format(tfun))
@@ -215,14 +217,22 @@ class ECall (Exp):
             raise Exception("Type error2: wrong number of arguments in ECall, expected {} got {}".format(len(tfun.params),len(self._args)))
         for (t,arg) in zip(tfun.params,self._args):
             if t.isFunction():
+                print t, arg, "tagr"
                 for i,j in zip(t.params, arg.typecheck(symtable).params):
+                    print i, j, "ijjj", i.type_name
                     if i.isGen():
+                        print i.type_name, "typename", symtable
                         found = search_table(i, symtable)
                         if found == False:
+                            print "ADDING", i.type_name
                             symtable = symtable + [(i.type_name, j)]
                         else:
                             if not found.type == j.type:
-                                raise Exception("Type error3: wrong argument in ECall, expected {} got {}".format(found.type,j.type))            
+                                print found, j, "**", type(found.type)
+                                if found.type == "gen":
+                                    symtable = symtable + [(i.type_name, j)]
+                                else:
+                                    raise Exception("Type error3: wrong argument in ECall, expected {} got {}".format(found.type,j.type))            
                 if not t.result.isGen():
                     if not t.result == arg.typecheck(symtable).result:
                         raise Exception("Type error4: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
@@ -241,19 +251,12 @@ class ECall (Exp):
             else:
                 found = search_table(t, symtable)
                 if found == False:
+                    print "ADDINg2", t.type_name, t, arg.typecheck(symtable)
                     symtable = symtable + [(t.type_name, arg.typecheck(symtable))]  
                 else:
                     if not found.isEqual(arg.typecheck(symtable)):
                         raise Exception("Type error7: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
         return tfun.result
-                # found = False
-                # for (name,typ) in reversed(symtable):
-                #     if name == t.type_name:
-                #         found = True
-                #         if not t.isEqual(arg.typecheck(symtable)):
-                #             raise Exception("Type error: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
-                # if found == False:
-                #     symtable = symtable + [(t.type_name, arg.typecheck(symtable))]    
 
     def __str__ (self):
         return "ECall({},[{}])".format(str(self._fun),",".join([str(e) for e in self._args]))
