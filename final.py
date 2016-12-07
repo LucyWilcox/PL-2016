@@ -17,6 +17,8 @@ import traceback
 # helper code to time the execution of a piece of code
 #
 
+typetable = []
+
 class Timer(object):
     def __enter__(self):
         self.__start = time.time()
@@ -207,8 +209,7 @@ class ECall (Exp):
 
     def typecheck (self,symtable):
         # type is the type of the result of the function
-        old_symtable = symtable
-        print "TYPECALL"
+        global typetable
         tfun = self._fun.typecheck(symtable)
         if not (tfun.isFunction()):
             raise Exception("Type error1: non-function in ECall, got {}".format(tfun))
@@ -217,28 +218,26 @@ class ECall (Exp):
             raise Exception("Type error2: wrong number of arguments in ECall, expected {} got {}".format(len(tfun.params),len(self._args)))
         for (t,arg) in zip(tfun.params,self._args):
             if t.isFunction():
-                print t, arg, "tagr"
                 for i,j in zip(t.params, arg.typecheck(symtable).params):
-                    print i, j, "ijjj", i.type_name
                     if i.isGen():
-                        print i.type_name, "typename", symtable
-                        found = search_table(i, symtable)
+                        found = search_table(i)
                         if found == False:
-                            print "ADDING", i.type_name
+                            typetable = typetable + [(i.type_name, j)]
                             symtable = symtable + [(i.type_name, j)]
                         else:
                             if not found.type == j.type:
-                                print found, j, "**", type(found.type)
                                 if found.type == "gen":
+                                    typetable = typetable + [(i.type_name, j)]
                                     symtable = symtable + [(i.type_name, j)]
                                 else:
                                     raise Exception("Type error3: wrong argument in ECall, expected {} got {}".format(found.type,j.type))            
                 if not t.result.isGen():
-                    if not t.result == arg.typecheck(symtable).result:
+                    if not t.isEqual(arg.typecheck(symtable)):
                         raise Exception("Type error4: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
                 else:
-                    found = search_table(t.result, symtable)
+                    found = search_table(t.result)
                     if found == False:
+                        typetable = typetable + [(t.result.type_name, arg.typecheck(symtable).result)]
                         symtable = symtable + [(t.result.type_name, arg.typecheck(symtable).result)]
                     else:
                         if not found.type == arg.typecheck(symtable).result.type:
@@ -249,13 +248,17 @@ class ECall (Exp):
                     raise Exception("Type error6: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))
             
             else:
-                found = search_table(t, symtable)
+                found = search_table(t)
                 if found == False:
-                    print "ADDINg2", t.type_name, t, arg.typecheck(symtable)
+                    typetable = typetable + [(t.type_name, arg.typecheck(symtable))]  
                     symtable = symtable + [(t.type_name, arg.typecheck(symtable))]  
                 else:
                     if not found.isEqual(arg.typecheck(symtable)):
-                        raise Exception("Type error7: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
+                        if found.type == "gen":
+                            typetable = typetable + [(t.type_name, arg.typecheck(symtable))]
+                            symtable = symtable + [(t.type_name, arg.typecheck(symtable))]
+                        else:
+                            raise Exception("Type error7: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
         return tfun.result
 
     def __str__ (self):
@@ -280,15 +283,12 @@ class EFunction (Exp):
             self._param_types = [ TUnknown() for p in params]
 
     def typecheck (self,symtable):
-        print "came here to efunction type check"
         if self._name:
             # recursive function, so type check under the assumption that the current
             # function returns a value of type TAny (basically, any type), and read off
             # the body type we get as the final type
             # If TAny is the final type, we've just identified an infinite loop!
             tself = [(self._name,TFunction(self._param_types,TAny()))]
-            print tself,"tself"
-            print self._body
             tbody = self._body.typecheck(symtable+zip(self._params,self._param_types)+tself)
         else:
             tbody = self._body.typecheck(zip(self._params,self._param_types) + symtable)
@@ -438,11 +438,8 @@ def parse (input):
     pTYPE_FUN = "(" + Literal("->") + "(" + Group(OneOrMore(pTYPE)) + ")" + pTYPE + ")"
     pTYPE_FUN.setParseAction(lambda result: TFunction(result[3],result[5]))
 
-    def cameHere(result):
-        print result[1],"came here?????"
     pTYPE_GEN = "<" + pNAME + ">"
     pTYPE_GEN.setParseAction(lambda result: TGen(result[1]))
-    # pTYPE_GEN.setParseAction(cameHere)
 
     pTYPE << (pTYPE_INT | pTYPE_BOOL | pTYPE_REF | pTYPE_GEN | pTYPE_FUN)
 
@@ -484,8 +481,6 @@ def parse (input):
     # ADDED TYPE!!
     pFUN = "(" + Keyword("function") + "(" + pNAMES + ")" + pTYPES +  pEXPR + ")"
     pFUN.setParseAction(lambda result: EFunction(result[3],result[6],types=result[5]))
-    #pFUN.setDebug()
-    #pFUN.setName("pFUN")
 
     pFUNrec = "(" + Keyword("function") + pNAME + "(" + pNAMES + ")" + pTYPES + pEXPR + ")"
     pFUNrec.setParseAction(lambda result: EFunction(result[4],result[7],types=result[6],name=result[2]))
@@ -603,8 +598,8 @@ def initial_symtable ():
             ("update!",TFunction([TRef(TInteger()),TInteger()],TNone())),
             ("print!",TFunction([TInteger()],TNone()))]
 
-def search_table(t, symtable):
-    for (name,typ) in reversed(symtable):
+def search_table(t):
+    for (name,typ) in reversed(typetable):
         if name == t.type_name:
             return typ
     return False
@@ -623,8 +618,10 @@ def shell ():
         inp = raw_input("ref/types> ")
 
         try:
+            global typetable
+            typetable = symt
             result = parse(inp)
-            print result,"result*****"
+            print result
 
             if result["result"] == "expression":
                 exp = result["expr"]
@@ -648,7 +645,7 @@ def shell ():
                 # functions can refer to each other
                 f = EFunction(result["params"],result["body"],types=result["types"],name=result["name"])
                 t = f.typecheck(symt)
-                print "[Type {}]".format(t) + "right here"
+                print "[Type {}]".format(t)
                 v = f.eval(env)
 
                 env = add_binding(result["name"],v,env)
@@ -727,7 +724,17 @@ class TFunction (Type):
         self.params = params
         self.result = result
     def __str__ (self):
-        return "(-> ({}) {})".format(" ".join([ str(t) for t in self.params]),self.result)
+        params = []
+        for t in self.params:
+            if hasattr(t, "type_name"):
+                params.append(str(t.type_name))
+            else:
+                params.append(str(t))
+        if hasattr(self.result, "type_name"):
+            result = self.result.type_name
+        else:
+            result = self.result
+        return "(-> ({}) {})".format(" ".join(params),result)
     def isFunction (self):
         return True
     def isEqual (self,t):
