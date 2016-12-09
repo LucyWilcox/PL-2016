@@ -210,32 +210,35 @@ class ECall (Exp):
     def typecheck (self,symtable):
         # type is the type of the result of the function
         global typetable
+        old_typetable = typetable
         tfun = self._fun.typecheck(symtable)
         if not (tfun.isFunction()):
             raise Exception("Type error1: non-function in ECall, got {}".format(tfun))
-        # found, expected...
         if len(tfun.params) != len(self._args):
             raise Exception("Type error2: wrong number of arguments in ECall, expected {} got {}".format(len(tfun.params),len(self._args)))
         for (t,arg) in zip(tfun.params,self._args):
             if t.isFunction():
                 for i,j in zip(t.params, arg.typecheck(symtable).params):
                     if i.isGen():
-                        found = search_table(i)
+                        found = search_table(i, typetable)
                         if found == False:
                             typetable = typetable + [(i.type_name, j)]
                             symtable = symtable + [(i.type_name, j)]
                         else:
+
                             if not found.type == j.type:
                                 if found.type == "gen":
                                     typetable = typetable + [(i.type_name, j)]
                                     symtable = symtable + [(i.type_name, j)]
                                 else:
                                     raise Exception("Type error3: wrong argument in ECall, expected {} got {}".format(found.type,j.type))            
+                
+                typetable = old_typetable
                 if not t.result.isGen():
                     if not t.isEqual(arg.typecheck(symtable)):
                         raise Exception("Type error4: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
                 else:
-                    found = search_table(t.result)
+                    found = search_table(t.result, typetable)
                     if found == False:
                         typetable = typetable + [(t.result.type_name, arg.typecheck(symtable).result)]
                         symtable = symtable + [(t.result.type_name, arg.typecheck(symtable).result)]
@@ -248,7 +251,7 @@ class ECall (Exp):
                     raise Exception("Type error6: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))
             
             else:
-                found = search_table(t)
+                found = search_table(t, typetable)
                 if found == False:
                     typetable = typetable + [(t.type_name, arg.typecheck(symtable))]  
                     symtable = symtable + [(t.type_name, arg.typecheck(symtable))]  
@@ -444,7 +447,7 @@ def parse (input):
     pTYPE << (pTYPE_INT | pTYPE_BOOL | pTYPE_REF | pTYPE_GEN | pTYPE_FUN)
 
 
-    pTYPES = "(" + Group(OneOrMore(pTYPE)) + ")"
+    pTYPES = "(" + Group(ZeroOrMore(pTYPE)) + ")"
     pTYPES.setParseAction(lambda result: [result[1]])
 
     pINTEGER = Word("0123456789")
@@ -598,8 +601,8 @@ def initial_symtable ():
             ("update!",TFunction([TRef(TInteger()),TInteger()],TNone())),
             ("print!",TFunction([TInteger()],TNone()))]
 
-def search_table(t):
-    for (name,typ) in reversed(typetable):
+def search_table(t, table):
+    for (name,typ) in reversed(table):
         if name == t.type_name:
             return typ
     return False
@@ -625,6 +628,7 @@ def shell ():
 
             if result["result"] == "expression":
                 exp = result["expr"]
+
                 with Timer() as timer:
                     typ = exp.typecheck(symt)
                     print "[Type {}]".format(typ)
