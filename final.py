@@ -227,7 +227,7 @@ class ECall (Exp):
                         else:
 
                             if not found.type == j.type:
-                                if found.type == "gen":
+                                if found.isGen():
                                     typetable = typetable + [(i.type_name, j)]
                                     symtable = symtable + [(i.type_name, j)]
                                 else:
