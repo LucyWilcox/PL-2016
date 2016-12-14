@@ -275,8 +275,8 @@ class ECall (Exp):
                         return found
 
         elif tfun.result.isFunction():
-            res = transform_type(tfun.result, symtable)
-            print res
+            tfun.result = transform_type(tfun.result, symtable)
+            # print res
         # check if function, if it is write a transform_type function which takes
         # the symtable and 
          
@@ -290,6 +290,7 @@ class ECall (Exp):
 
 def transform_type(fun, symtable):
     new_params = []
+    print fun, "START"
     for i in fun.params:
         if i.isFunction():
             return transform_type(i, symtable)
@@ -299,6 +300,8 @@ def transform_type(fun, symtable):
                 new_params.append(found)
             else:
                 new_params.append(i)
+        else:
+            new_params.append(i)
 
     if fun.result.isFunction():
         transform_type(fun.result, symtable)
@@ -308,8 +311,8 @@ def transform_type(fun, symtable):
             fun.result = found
         else:
             fun.result = fun.result
-
     fun.params = new_params
+    print fun, "END"
     return fun
 
 class EFunction (Exp):
