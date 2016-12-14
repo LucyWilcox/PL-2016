@@ -273,7 +273,13 @@ class ECall (Exp):
                     found = search_table(res, symtable)
                     if found != False:
                         return found
-        print symtable
+
+        elif tfun.result.isFunction():
+            res = transform_type(tfun.result, symtable)
+            print res
+        # check if function, if it is write a transform_type function which takes
+        # the symtable and 
+         
         return tfun.result
 
     def __str__ (self):
@@ -282,6 +288,36 @@ class ECall (Exp):
     def eval (self,env):
         return eval_iter(self,env)
 
+def transform_type(fun, symtable):
+    print "INTT", fun.params, fun.result
+    new_params = []
+    for i in fun.params:
+        if i.isFunction():
+            print "funct"
+            return transform_type(i, symtable)
+        if i.isGen():
+            found = search_table(i, symtable)
+            print found, "FFFFFOUNT&&&"
+            if found:
+                new_params.append(found)
+            else:
+                print "eles@@@@@2"
+                new_params.append(i)
+
+    if fun.result.isFunction():
+        transform_type(fun.result, symtable)
+    else:
+        found = search_table(fun.result, symtable)
+        if found:
+            print found, "((("
+            fun.result = found
+        else:
+            print "^^^^^", fun.result
+            fun.result = fun.result
+
+    fun.params = new_params
+    print "END", fun.params, fun.result
+    return fun
 
 class EFunction (Exp):
     # Creates an anonymous function
