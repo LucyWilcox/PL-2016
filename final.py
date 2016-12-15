@@ -275,7 +275,7 @@ class ECall (Exp):
                         return found
 
         elif tfun.result.isFunction():
-            tfun.result = transform_type(tfun.result, symtable)
+            return transform_type(tfun.result, symtable)
             # print res
         # check if function, if it is write a transform_type function which takes
         # the symtable and 
@@ -303,8 +303,11 @@ def transform_type(fun, symtable):
         else:
             new_params.append(i)
 
+
     if fun.result.isFunction():
+        print fun.result, "RES"
         transform_type(fun.result, symtable)
+        print m, "M"
     else:
         found = search_table(fun.result, symtable)
         if found:
