@@ -275,6 +275,7 @@ class ECall (Exp):
                         return found
 
         elif tfun.result.isFunction():
+            print tfun.result, symtable
             return transform_type(tfun.result, symtable)
             # print res
         # check if function, if it is write a transform_type function which takes
@@ -290,10 +291,10 @@ class ECall (Exp):
 
 def transform_type(fun, symtable):
     new_params = []
-    print fun, "START"
+    new_fun = TFunction([], TNone)
     for i in fun.params:
         if i.isFunction():
-            return transform_type(i, symtable)
+            transform_type(i, symtable)
         if i.isGen():
             found = search_table(i, symtable)
             if found:
@@ -305,18 +306,15 @@ def transform_type(fun, symtable):
 
 
     if fun.result.isFunction():
-        print fun.result, "RES"
         transform_type(fun.result, symtable)
-        print m, "M"
     else:
         found = search_table(fun.result, symtable)
         if found:
-            fun.result = found
+            new_fun.result = found
         else:
-            fun.result = fun.result
-    fun.params = new_params
-    print fun, "END"
-    return fun
+            new_fun.result = fun.result
+    new_fun.params = new_params
+    return new_fun
 
 class EFunction (Exp):
     # Creates an anonymous function
