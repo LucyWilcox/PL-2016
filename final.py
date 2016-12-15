@@ -1,4 +1,8 @@
 ############################################################
+# Polymorphic Types Final Project
+#
+# Based on Riccardo's lauguage:
+#
 # FUNC 
 # S-expressions surface syntax
 # reference cells
@@ -7,8 +11,43 @@
 #
 # use shell() to start
 
+"""
+Names:
+Lucy Wilcox
+Xiaofan Wu
+
+Emails:
+lucy.wilcox@students.olin.edu
+xuxiaofan1996@gmail.com
+
+Remarks:
+
+
+
+Our test cases:
+(+ 3 4)  -> 7
+(+ 3 false)  -> error
+( defun add1 (a) ( int) (+ a 1) )
+( defun istrue (a) ( bool) true )
+( defun is3 (a) (bool) 3)
+(defun map (a b) (<T> (-> (<T>) <S>)) (b a))
+(map (map 3 add1) add1)   -> 5
+(map (map true is3) add1)   -> 4
+(map (map true istrue) add1)  -> error
+(defun map2 (a b) ((-> (<T>) <S>) <T>) (a b))
+(map2 add1 (map2 add1 3))   -> 5
+(map2 add1 (map2 is3 true))   -> 4
+(map2 add1 (map2 istrue true))  -> error
+(defun curry (f) ((-> (<S> <T>) <U>)) (function (a) (<S>) (function (b) (<T>) (f a b))))
+(curry +)
+(defun pair (x y) (<T> <S>) (function (f) ((-> (<T> <S>) <U>)) (f x y)))
+(defun sum (a b) (int int) (+ a b)) 
+(defun test1 () () ((pair 3 4) sum))    -> This should pass
+(defun test2 () () ((pair 3 false) sum))    -> This should fail
+"""
+
+
 import sys
-import time
 import traceback
 
 
@@ -18,23 +57,6 @@ import traceback
 #
 
 typetable = []
-
-class Timer(object):
-    def __enter__(self):
-        self.__start = time.time()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        # Error handling here
-        self.__finish = time.time()
-
-    def duration_in_seconds(self):
-        return self.__finish - self.__start
-
-    def time (self):
-        return time.time() - self.__start
-
-
 
 
 #
@@ -135,14 +157,6 @@ class EPrimCall (Exp):
         return eval_iter(self,env)
 
 
-
-COUNTER = 0
-def fresh ():
-    global COUNTER
-    COUNTER += 1
-    return COUNTER-1
-
-
 class EIf (Exp):
     # Conditional expression
 
@@ -241,9 +255,6 @@ class ECall (Exp):
                     if found == False:
                         typetable = typetable + [(t.result.type_name, arg.typecheck(symtable).result)]
                         symtable = symtable + [(t.result.type_name, arg.typecheck(symtable).result)]
-                        # t = arg.typecheck(symtable).result
-                        # typetable = old_typetable
-                        # return arg.typecheck(typetable).result
                     else:
                         if not found.type == arg.typecheck(symtable).result.type:
                             raise Exception("Type error5: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
@@ -277,10 +288,7 @@ class ECall (Exp):
         elif tfun.result.isFunction():
             print tfun.result, symtable
             return transform_type(tfun.result, symtable)
-            # print res
-        # check if function, if it is write a transform_type function which takes
-        # the symtable and 
-         
+
         return tfun.result
 
     def __str__ (self):
@@ -289,32 +297,6 @@ class ECall (Exp):
     def eval (self,env):
         return eval_iter(self,env)
 
-def transform_type(fun, symtable):
-    new_params = []
-    new_fun = TFunction([], TNone)
-    for i in fun.params:
-        if i.isFunction():
-            transform_type(i, symtable)
-        if i.isGen():
-            found = search_table(i, symtable)
-            if found:
-                new_params.append(found)
-            else:
-                new_params.append(i)
-        else:
-            new_params.append(i)
-
-
-    if fun.result.isFunction():
-        transform_type(fun.result, symtable)
-    else:
-        found = search_table(fun.result, symtable)
-        if found:
-            new_fun.result = found
-        else:
-            new_fun.result = fun.result
-    new_fun.params = new_params
-    return new_fun
 
 class EFunction (Exp):
     # Creates an anonymous function
@@ -348,9 +330,38 @@ class EFunction (Exp):
     def eval (self,env):
         return eval_iter(self,env)
 
+#
+# Helper Functions
+#
 
-              
-    
+def transform_type(fun, symtable):
+    new_params = []
+    new_fun = TFunction([], TNone)
+    for i in fun.params:
+        if i.isFunction():
+            transform_type(i, symtable)
+        if i.isGen():
+            found = search_table(i, symtable)
+            if found:
+                new_params.append(found)
+            else:
+                new_params.append(i)
+        else:
+            new_params.append(i)
+
+
+    if fun.result.isFunction():
+        transform_type(fun.result, symtable)
+    else:
+        found = search_table(fun.result, symtable)
+        if found:
+            new_fun.result = found
+        else:
+            new_fun.result = fun.result
+    new_fun.params = new_params
+    return new_fun
+
+
 #
 # Values
 #
@@ -674,11 +685,9 @@ def shell ():
             if result["result"] == "expression":
                 exp = result["expr"]
 
-                with Timer() as timer:
-                    typ = exp.typecheck(symt)
-                    print "[Type {}]".format(typ)
-                    v = exp.eval(env)
-                    # print "Eval time: {}s".format(round(timer.time(),3))
+                typ = exp.typecheck(symt)
+                print "[Type {}]".format(typ)
+                v = exp.eval(env)
                 print v
 
             elif result["result"] == "abstract":
