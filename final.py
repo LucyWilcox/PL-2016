@@ -231,8 +231,9 @@ class ECall (Exp):
         if len(tfun.params) != len(self._args):
             raise Exception("Type error2: wrong number of arguments in ECall, expected {} got {}".format(len(tfun.params),len(self._args)))
         for (t,arg) in zip(tfun.params,self._args):
-            t, arg
+            #there are three cases that we want to check for each pair of params and args. when param is a function, a generic type, or just regular type
             if t.isFunction():
+                #when param is a function, we want to go through its own param and found/check each param's type
                 for i,j in zip(t.params, arg.typecheck(symtable).params):
                     if i.isGen():
                         found = search_table(i, typetable)
@@ -259,11 +260,11 @@ class ECall (Exp):
                         if not found.type == arg.typecheck(symtable).result.type:
                             raise Exception("Type error5: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))            
                 typetable = old_typetable
-
+            #if the param is not a function and not generic type, then it must have a type already, so we will need to check the param and the arg type
             elif not t.isGen():
                 if not t.isEqual(arg.typecheck(symtable)):
                     raise Exception("Type error6: wrong argument in ECall, expected {} got {}".format(t,arg.typecheck(symtable)))
-            
+            #if the param is generic, then we will either find it in the table or set the type
             else:
                 found = search_table(t, symtable)
                 if found == False:
@@ -284,9 +285,8 @@ class ECall (Exp):
                     found = search_table(res, symtable)
                     if found != False:
                         return found
-
+        #if the result is a function, we want to transform its generic type to the actual type.
         elif tfun.result.isFunction():
-            print tfun.result, symtable
             return transform_type(tfun.result, symtable)
 
         return tfun.result
@@ -814,6 +814,8 @@ class TRef (Type):
     def isEqual (self,t):
         return (t.isRef() and self.content.isEqual(t.content)) or t.isAny()
 
+#The gen type is the generic type that we can create for the function
+#It can be name as any generic type(type name). eg type T or S
 class TGen(Type):
     def __init__ (self,type_name):
         self.type = "gen"
