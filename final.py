@@ -277,15 +277,14 @@ class ECall (Exp):
                             symtable = symtable + [(t.type_name, arg.typecheck(symtable))]
                         else:
                             raise Exception("Type error7: wrong argument in ECall, expected {} got {}".format(found,arg.typecheck(symtable)))            
-
-        if hasattr(tfun.result, "type_name"):
-            if tfun.result.isGen():
-                if hasattr(tfun.result, "type_name"):
-                    res = tfun.result
-                    found = search_table(res, symtable)
-                    if found != False:
-                        return found
-        #if the result is a function, we want to transform its generic type to the actual type.
+        # if the result is a generic type, 
+        if tfun.result.isGen():
+            if hasattr(tfun.result, "type_name"):
+                res = tfun.result
+                found = search_table(res, symtable)
+                if found != False:
+                    return found
+        #if the result is a function, we want to transform its generic types to the actual types
         elif tfun.result.isFunction():
             return transform_type(tfun.result, symtable)
 
